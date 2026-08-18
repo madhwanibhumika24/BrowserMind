@@ -1,0 +1,9 @@
+{
+  "name": "browsermind-extension",
+  "version": "0.1.0",
+  "description": "BrowserMind Chrome extension frontend",
+  "private": true,
+  "scripts": {
+    "build": "echo \"add a bundler (esbuild/vite) here once the UI grows past vanilla JS\" && exit 0"
+  }
+}
