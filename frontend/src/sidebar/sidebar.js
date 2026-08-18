@@ -41,15 +41,26 @@ async function handleSend() {
   }
 }
 
+function formatGroupsAsText(groups) {
+  const lines = [];
+  for (const category in groups) {
+    const tabsInGroup = groups[category];
+    if (tabsInGroup.length === 0) continue;
+    const titles = tabsInGroup.map((t) => t.title).join(", ");
+    lines.push(`${category} (${tabsInGroup.length}): ${titles}`);
+  }
+  return lines.length ? lines.join("\n") : "No tabs to summarize.";
+}
+
 async function handleSummarize() {
   const tabs = await new Promise((resolve) => chrome.tabs.query({}, resolve));
   const tabList = tabs.map((t) => ({ tab_id: t.id, url: t.url, title: t.title }));
 
   try {
     const result = await summarizeTabs(tabList);
-    console.log("Tab summary:", result);
+    appendMessage(formatGroupsAsText(result.groups), "assistant");
   } catch (err) {
-    console.log("Could not summarize tabs:", err);
+    appendMessage("Could not summarize tabs right now.", "assistant");
   }
 }
 
