@@ -15,3 +15,4 @@ frontend/*.log
 .DS_Store
 *.log
 .env
+__test_delete_me*
