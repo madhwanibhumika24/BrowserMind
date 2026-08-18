@@ -1,9 +1,10 @@
-import { sendChatMessage } from "../utils/api.js";
+import { sendChatMessage, summarizeTabs } from "../utils/api.js";
 
 const sessionId = crypto.randomUUID();
 const chatLog = document.getElementById("chat-log");
 const input = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
+const summarizeBtn = document.getElementById("summarize-btn");
 
 function appendMessage(text, who) {
   const el = document.createElement("div");
@@ -40,7 +41,20 @@ async function handleSend() {
   }
 }
 
+async function handleSummarize() {
+  const tabs = await new Promise((resolve) => chrome.tabs.query({}, resolve));
+  const tabList = tabs.map((t) => ({ tab_id: t.id, url: t.url, title: t.title }));
+
+  try {
+    const result = await summarizeTabs(tabList);
+    console.log("Tab summary:", result);
+  } catch (err) {
+    console.log("Could not summarize tabs:", err);
+  }
+}
+
 sendBtn.addEventListener("click", handleSend);
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleSend();
 });
+summarizeBtn.addEventListener("click", handleSummarize);

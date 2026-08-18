@@ -31,3 +31,13 @@ export async function deleteMemory(memoryId) {
   if (!res.ok) throw new Error(`Memory delete failed: ${res.status}`);
   return res.json();
 }
+
+export async function summarizeTabs(tabs) {
+  const res = await fetch(`${BASE_URL}/tabs/summarize`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(tabs),
+  });
+  if (!res.ok) throw new Error(`Tab summarize failed: ${res.status}`);
+  return res.json();
+}
