@@ -4,8 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_env: str = "development"
-    openai_api_key: str = ""
-    openai_model: str = "gpt-4o-mini"
+    google_api_key: str = ""
+    gemini_model: str = "gemini-2.5-flash"
     chroma_persist_dir: str = "./data/chroma"
     allowed_origins: str = "chrome-extension://*"
 

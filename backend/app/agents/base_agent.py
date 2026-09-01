@@ -44,5 +44,5 @@ class BaseAgent(ABC):
         except Exception as exc:  # noqa: BLE001 - surface a friendly fallback, don't 500
             return (
                 f"[{self.name}-agent] Couldn't reach the LLM ({exc.__class__.__name__}). "
-                "Check that OPENAI_API_KEY is set in backend/.env."
+                "Check that GOOGLE_API_KEY is set in backend/.env."
             )
