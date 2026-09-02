@@ -19,12 +19,27 @@
         <button id="quiz-btn" title="Quiz me on this page">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg>
         </button>
+        <button id="clear-chat-btn" title="New chat">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6"/></svg>
+        </button>
         <button id="close-btn" title="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
     </header>
-    <div id="memory-panel" class="hidden"></div>
+    <div id="memory-panel" class="hidden">
+      <div id="memory-panel-header">
+        <span>Remembered from this chat</span>
+        <button id="memory-refresh-btn" title="Refresh">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        </button>
+      </div>
+      <div id="memory-list"></div>
+    </div>
+    <div id="summary-cta">
+      <p>Get a quick summary of this page, plus follow-up questions.</p>
+      <button id="summary-cta-btn">Summarize this page</button>
+    </div>
     <main id="chat-log"></main>
     <footer>
       <input id="chat-input" type="text" placeholder="Ask BrowserMind..." />

@@ -79,8 +79,126 @@ header {
 #memory-panel {
   border-bottom: 1px solid var(--bm-border);
   padding: 10px 16px;
-  max-height: 200px;
+  max-height: 220px;
   overflow-y: auto;
+}
+
+#memory-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--bm-text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+#memory-refresh-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 0;
+}
+
+#memory-refresh-btn svg {
+  width: 13px;
+  height: 13px;
+}
+
+#memory-refresh-btn:hover {
+  background: var(--bm-surface-hover);
+  color: var(--bm-text);
+}
+
+.memory-empty {
+  color: var(--bm-text-muted);
+  font-size: 12.5px;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.memory-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  margin-bottom: 6px;
+}
+
+.memory-item-source {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--bm-accent);
+  padding-top: 1px;
+  width: 62px;
+}
+
+.memory-item-content {
+  flex: 1;
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--bm-text);
+  word-break: break-word;
+}
+
+.memory-item-delete {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: transparent;
+  color: var(--bm-text-muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.memory-item-delete:hover {
+  background: var(--bm-surface-hover);
+  color: #e05a5a;
+}
+
+#summary-cta {
+  margin: 14px 16px 0;
+  padding: 14px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 10px;
+  text-align: center;
+}
+
+#summary-cta p {
+  margin: 0 0 10px;
+  color: var(--bm-text-muted);
+  font-size: 12.5px;
+}
+
+#summary-cta-btn {
+  background: var(--bm-accent);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#summary-cta-btn:hover {
+  opacity: 0.9;
 }
 
 #chat-log {

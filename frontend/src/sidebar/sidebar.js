@@ -1,12 +1,30 @@
-import { sendChatMessage, summarizeTabs, generateSummary } from "../utils/api.js";
+import {
+  sendChatMessage,
+  summarizeTabs,
+  generateSummary,
+  getMemory,
+  deleteMemory,
+} from "../utils/api.js";
 
-const sessionId = crypto.randomUUID();
+// sessionId and historyMessages can both get replaced once we restore a
+// saved chat for this site (see restoreHistory below), so they're `let`.
+let sessionId = crypto.randomUUID();
+let historyMessages = [];
+let chatKey = null; // set once we know which site's chat this is
+
 const chatLog = document.getElementById("chat-log");
 const input = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
 const summarizeBtn = document.getElementById("summarize-btn");
 const quizBtn = document.getElementById("quiz-btn");
+const memoryBtn = document.getElementById("memory-btn");
+const memoryPanel = document.getElementById("memory-panel");
+const memoryList = document.getElementById("memory-list");
+const memoryRefreshBtn = document.getElementById("memory-refresh-btn");
+const clearChatBtn = document.getElementById("clear-chat-btn");
 const closeBtn = document.getElementById("close-btn");
+const summaryCta = document.getElementById("summary-cta");
+const summaryCtaBtn = document.getElementById("summary-cta-btn");
 
 function escapeHtml(text) {
   const div = document.createElement("div");
@@ -21,7 +39,9 @@ function formatReply(text) {
   return html;
 }
 
-function appendMessage(text, who) {
+// Just draws a message bubble - does not save it. Used both for new
+// messages and for redrawing messages restored from storage.
+function renderMessage(text, who) {
   const el = document.createElement("div");
   el.className = `msg msg-${who}`;
   if (who === "assistant") {
@@ -31,6 +51,46 @@ function appendMessage(text, who) {
   }
   chatLog.appendChild(el);
   chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+// Draws a new message AND saves it, so the conversation survives closing
+// and reopening the sidebar on this site.
+function appendMessage(text, who) {
+  renderMessage(text, who);
+  historyMessages.push({ text, who });
+  saveHistory();
+}
+
+function saveHistory() {
+  if (!chatKey) return;
+  // Keep only the most recent messages so storage doesn't grow forever.
+  historyMessages = historyMessages.slice(-60);
+  chrome.storage.local.set({ [chatKey]: { sessionId, messages: historyMessages } });
+}
+
+async function getSiteChatKey() {
+  const activeTab = await getActiveTab();
+  let hostname = "default";
+  try {
+    hostname = new URL(activeTab.url).hostname || "default";
+  } catch (err) {
+    hostname = "default";
+  }
+  return `browsermindChat_${hostname}`;
+}
+
+async function restoreHistory() {
+  chatKey = await getSiteChatKey();
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get(chatKey, (result) => resolve(result[chatKey]));
+  });
+
+  if (stored && Array.isArray(stored.messages) && stored.messages.length) {
+    sessionId = stored.sessionId || sessionId;
+    historyMessages = stored.messages;
+    historyMessages.forEach(({ text, who }) => renderMessage(text, who));
+    summaryCta.classList.add("hidden");
+  }
 }
 
 function showLoading() {
@@ -74,8 +134,9 @@ function renderSuggestions(questions) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
-async function sendChat(message) {
-  appendMessage(message, "user");
+async function sendChat(message, displayText) {
+  summaryCta.classList.add("hidden");
+  appendMessage(displayText || message, "user");
   showLoading();
 
   const activeTab = await getActiveTab();
@@ -108,7 +169,8 @@ async function handleSend() {
   await sendChat(message);
 }
 
-async function autoSummarizePage() {
+async function summarizePage() {
+  summaryCta.classList.add("hidden");
   showLoading();
   const activeTab = await getActiveTab();
   const excerpt = await getPageExcerpt(activeTab.id);
@@ -127,6 +189,65 @@ async function autoSummarizePage() {
     hideLoading();
     appendMessage("Ask me anything about this page.", "assistant");
   }
+}
+
+function truncate(text, maxLen = 110) {
+  return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
+}
+
+async function loadMemory() {
+  memoryList.innerHTML = `<p class="memory-empty">Loading...</p>`;
+
+  try {
+    const items = await getMemory(sessionId);
+    renderMemoryItems(items);
+  } catch (err) {
+    memoryList.innerHTML = `<p class="memory-empty">Could not load memory right now.</p>`;
+  }
+}
+
+function renderMemoryItems(items) {
+  memoryList.innerHTML = "";
+
+  if (!items.length) {
+    memoryList.innerHTML = `<p class="memory-empty">Nothing remembered yet for this chat.</p>`;
+    return;
+  }
+
+  items.forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "memory-item";
+
+    const source = document.createElement("span");
+    source.className = "memory-item-source";
+    source.textContent = item.source === "user" ? "You" : "BrowserMind";
+    row.appendChild(source);
+
+    const content = document.createElement("p");
+    content.className = "memory-item-content";
+    content.textContent = truncate(item.content);
+    content.title = item.content;
+    row.appendChild(content);
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "memory-item-delete";
+    deleteBtn.title = "Forget this";
+    deleteBtn.textContent = "×";
+    deleteBtn.addEventListener("click", async () => {
+      try {
+        await deleteMemory(item.id);
+        row.remove();
+        if (!memoryList.children.length) {
+          memoryList.innerHTML = `<p class="memory-empty">Nothing remembered yet for this chat.</p>`;
+        }
+      } catch (err) {
+        // If delete fails, leave the item in place rather than lying about it.
+      }
+    });
+    row.appendChild(deleteBtn);
+
+    memoryList.appendChild(row);
+  });
 }
 
 function formatGroupsAsText(groups) {
@@ -174,8 +295,28 @@ input.addEventListener("keydown", (e) => {
 });
 summarizeBtn.addEventListener("click", handleSummarize);
 quizBtn.addEventListener("click", handleQuiz);
+memoryBtn.addEventListener("click", () => {
+  memoryPanel.classList.toggle("hidden");
+  if (!memoryPanel.classList.contains("hidden")) loadMemory();
+});
+memoryRefreshBtn.addEventListener("click", loadMemory);
+clearChatBtn.addEventListener("click", () => {
+  chatLog.innerHTML = "";
+  historyMessages = [];
+  sessionId = crypto.randomUUID();
+  saveHistory();
+  summaryCta.classList.remove("hidden");
+  memoryPanel.classList.add("hidden");
+});
 closeBtn.addEventListener("click", () => {
   window.parent.postMessage({ type: "BROWSERMIND_CLOSE" }, "*");
 });
+summaryCtaBtn.addEventListener("click", summarizePage);
 
-autoSummarizePage();
+window.addEventListener("message", (event) => {
+  if (event.data?.type === "BROWSERMIND_QUICK_ASK") {
+    sendChat(event.data.query, event.data.label);
+  }
+});
+
+restoreHistory();
