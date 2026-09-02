@@ -40,3 +40,19 @@ class MemoryItem(BaseModel):
 
 class MemoryDeleteRequest(BaseModel):
     memory_id: str
+
+
+class QuizItem(BaseModel):
+    question: str
+    options: list[str]
+    answer: str
+
+
+class QuizResponse(BaseModel):
+    category: str
+    items: list[QuizItem]
+
+
+class SummaryResponse(BaseModel):
+    summary: str
+    questions: list[str]

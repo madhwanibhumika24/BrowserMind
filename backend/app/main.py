@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes import chat, memory, tabs
+from app.api.routes import chat, memory, quiz, summary, tabs
 from app.core.config import settings
 
 app = FastAPI(title="BrowserMind API", version="0.1.0")
@@ -18,6 +18,8 @@ app.add_middleware(
 app.include_router(chat.router)
 app.include_router(memory.router)
 app.include_router(tabs.router)
+app.include_router(quiz.router)
+app.include_router(summary.router)
 
 
 @app.get("/health")
