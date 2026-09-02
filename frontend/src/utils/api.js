@@ -41,3 +41,23 @@ export async function summarizeTabs(tabs) {
   if (!res.ok) throw new Error(`Tab summarize failed: ${res.status}`);
   return res.json();
 }
+
+export async function generateQuiz(tab) {
+  const res = await fetch(`${BASE_URL}/quiz/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(tab),
+  });
+  if (!res.ok) throw new Error(`Quiz generation failed: ${res.status}`);
+  return res.json();
+}
+
+export async function generateSummary(tab) {
+  const res = await fetch(`${BASE_URL}/summary/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(tab),
+  });
+  if (!res.ok) throw new Error(`Summary generation failed: ${res.status}`);
+  return res.json();
+}

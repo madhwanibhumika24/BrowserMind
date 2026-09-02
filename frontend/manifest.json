@@ -7,16 +7,8 @@
     "default_title": "Open BrowserMind"
   },
   "background": {
-    "service_worker": "src/background/background.js",
-    "type": "module"
+    "service_worker": "src/background/background.js"
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["src/content/content.js", "src/content/selection-toolbar.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "permissions": ["tabs", "storage", "scripting", "activeTab"],
   "host_permissions": ["http://localhost:8000/*"],
   "icons": {
