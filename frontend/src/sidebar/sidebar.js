@@ -21,6 +21,7 @@ const memoryBtn = document.getElementById("memory-btn");
 const memoryPanel = document.getElementById("memory-panel");
 const memoryList = document.getElementById("memory-list");
 const memoryRefreshBtn = document.getElementById("memory-refresh-btn");
+const themeToggleBtn = document.getElementById("theme-toggle-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const closeBtn = document.getElementById("close-btn");
 const summaryCta = document.getElementById("summary-cta");
@@ -191,6 +192,34 @@ async function summarizePage() {
   }
 }
 
+const THEME_KEY = "browsermindTheme";
+const SUN_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+const MOON_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+
+// Shows the icon for the mode you'd SWITCH TO, not the current mode -
+// that's the usual convention for a theme toggle button.
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+  themeToggleBtn.innerHTML = theme === "dark" ? SUN_ICON : MOON_ICON;
+  themeToggleBtn.title = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+}
+
+async function loadTheme() {
+  const stored = await new Promise((resolve) => {
+    chrome.storage.local.get(THEME_KEY, (result) => resolve(result[THEME_KEY]));
+  });
+  applyTheme(stored || "dark");
+}
+
+themeToggleBtn.addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") || "dark";
+  const next = current === "dark" ? "light" : "dark";
+  applyTheme(next);
+  chrome.storage.local.set({ [THEME_KEY]: next });
+});
+
 function truncate(text, maxLen = 110) {
   return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
 }
@@ -319,4 +348,5 @@ window.addEventListener("message", (event) => {
   }
 });
 
+loadTheme();
 restoreHistory();

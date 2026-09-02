@@ -8,6 +8,19 @@
   --bm-border: #262a33;
 }
 
+/* Same variable names, light values - swapped in via data-theme on <html>.
+   Everything below already styles off these variables, so this one block
+   is enough to re-skin the whole sidebar. */
+:root[data-theme="light"] {
+  --bm-bg: #f5f6f8;
+  --bm-surface: #ffffff;
+  --bm-surface-hover: #edeef2;
+  --bm-text: #1b1e24;
+  --bm-text-muted: #6b7280;
+  --bm-accent: #6c5ce7;
+  --bm-border: #e2e4ea;
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -18,6 +31,7 @@ body {
   color: var(--bm-text);
   border-radius: 16px;
   overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .hidden {
@@ -37,6 +51,8 @@ header {
   padding: 14px 16px;
   border-bottom: 1px solid var(--bm-border);
   background: var(--bm-surface);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .logo {
@@ -289,20 +305,24 @@ footer {
   white-space: pre-line;
   line-height: 1.45;
   margin-bottom: 10px;
-  padding: 9px 12px;
-  border-radius: 10px;
+  padding: 9px 13px;
+  border-radius: 14px;
   max-width: 88%;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .msg-user {
   background: var(--bm-accent);
   color: white;
   margin-left: auto;
+  border-bottom-right-radius: 4px;
 }
 
 .msg-assistant {
   background: var(--bm-surface);
   border: 1px solid var(--bm-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-bottom-left-radius: 4px;
 }
 
 .msg-loading {
