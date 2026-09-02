@@ -20,10 +20,18 @@ if (!window.browsermindLoaded) {
     resizeHandle.style.left = `${window.innerWidth - MARGIN - currentWidth - 3}px`;
   }
 
-  function openSidebar() {
+  function sendQueryToSidebar(query) {
+    sidebarFrame.contentWindow.postMessage({ type: "BROWSERMIND_QUICK_ASK", query }, "*");
+  }
+
+  function openSidebar(initialQuery) {
     sidebarFrame = document.createElement("iframe");
     sidebarFrame.id = "browsermind-sidebar";
     sidebarFrame.src = chrome.runtime.getURL("src/sidebar/sidebar.html");
+
+    if (initialQuery) {
+      sidebarFrame.addEventListener("load", () => sendQueryToSidebar(initialQuery));
+    }
 
     Object.assign(sidebarFrame.style, {
       position: "fixed",
@@ -111,5 +119,32 @@ if (!window.browsermindLoaded) {
 
   window.addEventListener("message", (event) => {
     if (event.data?.type === "BROWSERMIND_CLOSE") closeSidebar();
+  });
+
+  const QUICK_ASK_PROMPTS = {
+    explain: (text) => `Explain this: "${text}"`,
+    summarize: (text) => `Summarize this: "${text}"`,
+    simplify: (text) => `Rewrite this in simple, plain terms: "${text}"`,
+    define: (text) => `Define this term/concept: "${text}"`,
+  };
+
+  document.addEventListener("browsermind:quick-ask", (e) => {
+    const { text, action } = e.detail;
+    const query = QUICK_ASK_PROMPTS[action](text);
+
+    if (sidebarFrame) {
+      sendQueryToSidebar(query);
+    } else {
+      openSidebar(query);
+    }
+  });
+
+  document.addEventListener("browsermind:quiz-selection", (e) => {
+    chrome.runtime.sendMessage({
+      type: "OPEN_QUIZ_FROM_SELECTION",
+      text: e.detail.text,
+      url: location.href,
+      title: document.title,
+    });
   });
 }

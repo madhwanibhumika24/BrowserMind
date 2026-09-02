@@ -43,4 +43,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
     return true; // keep the message channel open for async sendResponse
   }
+
+  if (message.type === "OPEN_QUIZ_FROM_SELECTION") {
+    chrome.storage.local
+      .set({
+        browsermindQuizTab: {
+          tab_id: sender.tab?.id ?? 0,
+          url: message.url,
+          title: message.title,
+          content_excerpt: message.text,
+        },
+      })
+      .then(() => {
+        chrome.tabs.create({ url: chrome.runtime.getURL("src/quiz/quiz.html") });
+      });
+  }
 });
