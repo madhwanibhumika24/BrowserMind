@@ -1,97 +1,115 @@
-// Injected into every page. Responsible for mounting/unmounting the
-// BrowserMind sidebar iframe, animating it in/out, and letting the user
-// drag it around the page.
+if (!window.browsermindLoaded) {
+  window.browsermindLoaded = true;
 
-let sidebarFrame = null;
-let isDragging = false;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
+  let sidebarFrame = null;
+  let resizeHandle = null;
+  let currentWidth = 380;
+  let isResizing = false;
+  let resizeStartX = 0;
+  let resizeStartWidth = 0;
 
-const PANEL_WIDTH = 360;
-const MARGIN = 16;
+  const MIN_WIDTH = 280;
+  const MAX_WIDTH = 600;
+  const MARGIN = 16;
 
-function getPageExcerpt(maxLen = 2000) {
-  return document.body ? document.body.innerText.slice(0, maxLen) : "";
-}
+  function getPageExcerpt(maxLen = 2000) {
+    return document.body ? document.body.innerText.slice(0, maxLen) : "";
+  }
 
-function openSidebar() {
-  sidebarFrame = document.createElement("iframe");
-  sidebarFrame.id = "browsermind-sidebar";
-  sidebarFrame.src = chrome.runtime.getURL("src/sidebar/sidebar.html");
+  function positionHandle() {
+    resizeHandle.style.left = `${window.innerWidth - MARGIN - currentWidth - 3}px`;
+  }
 
-  Object.assign(sidebarFrame.style, {
-    position: "fixed",
-    left: `${window.innerWidth - PANEL_WIDTH - MARGIN}px`,
-    top: `${MARGIN}px`,
-    width: `${PANEL_WIDTH}px`,
-    height: `calc(100vh - ${MARGIN * 2}px)`,
-    border: "none",
-    borderRadius: "16px",
-    zIndex: "2147483647",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
-    transition: "transform 0.25s ease, opacity 0.25s ease",
-    transform: "translateX(20px)",
-    opacity: "0",
+  function openSidebar() {
+    sidebarFrame = document.createElement("iframe");
+    sidebarFrame.id = "browsermind-sidebar";
+    sidebarFrame.src = chrome.runtime.getURL("src/sidebar/sidebar.html");
+
+    Object.assign(sidebarFrame.style, {
+      position: "fixed",
+      right: `${MARGIN}px`,
+      top: `${MARGIN}px`,
+      width: `${currentWidth}px`,
+      height: `calc(100vh - ${MARGIN * 2}px)`,
+      border: "none",
+      borderRadius: "16px",
+      zIndex: "2147483647",
+      boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
+      transition: "transform 0.25s ease, opacity 0.25s ease",
+      transform: "translateX(20px)",
+      opacity: "0",
+    });
+
+    resizeHandle = document.createElement("div");
+    Object.assign(resizeHandle.style, {
+      position: "fixed",
+      top: `${MARGIN}px`,
+      height: `calc(100vh - ${MARGIN * 2}px)`,
+      width: "6px",
+      cursor: "ew-resize",
+      zIndex: "2147483647",
+    });
+    positionHandle();
+
+    resizeHandle.addEventListener("mousedown", (e) => {
+      isResizing = true;
+      resizeStartX = e.clientX;
+      resizeStartWidth = currentWidth;
+      sidebarFrame.style.pointerEvents = "none";
+    });
+
+    document.documentElement.appendChild(sidebarFrame);
+    document.documentElement.appendChild(resizeHandle);
+
+    requestAnimationFrame(() => {
+      sidebarFrame.style.transform = "translateX(0)";
+      sidebarFrame.style.opacity = "1";
+    });
+  }
+
+  function closeSidebar() {
+    if (!sidebarFrame) return;
+    const frameToRemove = sidebarFrame;
+    const handleToRemove = resizeHandle;
+    sidebarFrame = null;
+    resizeHandle = null;
+
+    frameToRemove.style.transform = "translateX(20px)";
+    frameToRemove.style.opacity = "0";
+    setTimeout(() => {
+      frameToRemove.remove();
+      handleToRemove?.remove();
+    }, 250);
+  }
+
+  function toggleSidebar() {
+    if (sidebarFrame) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  }
+
+  window.addEventListener("mousemove", (e) => {
+    if (!isResizing) return;
+    const delta = resizeStartX - e.clientX;
+    currentWidth = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, resizeStartWidth + delta));
+    sidebarFrame.style.width = `${currentWidth}px`;
+    positionHandle();
   });
 
-  document.documentElement.appendChild(sidebarFrame);
+  window.addEventListener("mouseup", () => {
+    if (!isResizing) return;
+    isResizing = false;
+    if (sidebarFrame) sidebarFrame.style.pointerEvents = "auto";
+  });
 
-  // Animate in on the next frame (so the transition actually plays).
-  requestAnimationFrame(() => {
-    sidebarFrame.style.transform = "translateX(0)";
-    sidebarFrame.style.opacity = "1";
+  chrome.runtime.onMessage.addListener((message) => {
+    if (message.type === "TOGGLE_SIDEBAR") toggleSidebar();
+    if (message.type === "GET_PAGE_EXCERPT") return getPageExcerpt();
+  });
+
+  window.addEventListener("message", (event) => {
+    if (event.data?.type === "BROWSERMIND_CLOSE") closeSidebar();
   });
 }
-
-function closeSidebar() {
-  if (!sidebarFrame) return;
-  const frameToRemove = sidebarFrame;
-  sidebarFrame = null;
-
-  frameToRemove.style.transform = "translateX(20px)";
-  frameToRemove.style.opacity = "0";
-  setTimeout(() => frameToRemove.remove(), 250);
-}
-
-function toggleSidebar() {
-  if (sidebarFrame) {
-    closeSidebar();
-  } else {
-    openSidebar();
-  }
-}
-
-chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "TOGGLE_SIDEBAR") toggleSidebar();
-  if (message.type === "GET_PAGE_EXCERPT") return getPageExcerpt();
-});
-
-// Messages from inside the sidebar iframe (it's a separate document, so it
-// talks to us via postMessage instead of calling functions directly).
-window.addEventListener("message", (event) => {
-  if (event.data?.type === "BROWSERMIND_CLOSE") {
-    closeSidebar();
-  }
-
-  if (event.data?.type === "BROWSERMIND_DRAG_START") {
-    isDragging = true;
-    dragOffsetX = event.data.offsetX;
-    dragOffsetY = event.data.offsetY;
-    // While dragging, let mouse events pass through the iframe to the page
-    // underneath - otherwise we'd stop getting mousemove once the cursor
-    // is over the iframe itself.
-    if (sidebarFrame) sidebarFrame.style.pointerEvents = "none";
-  }
-});
-
-window.addEventListener("mousemove", (e) => {
-  if (!isDragging || !sidebarFrame) return;
-  sidebarFrame.style.left = `${e.clientX - dragOffsetX}px`;
-  sidebarFrame.style.top = `${e.clientY - dragOffsetY}px`;
-});
-
-window.addEventListener("mouseup", () => {
-  if (!isDragging) return;
-  isDragging = false;
-  if (sidebarFrame) sidebarFrame.style.pointerEvents = "auto";
-});
