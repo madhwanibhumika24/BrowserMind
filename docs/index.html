@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>BrowserMind — Your AI-powered browsing assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700;800&family=Quicksand:wght@600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #0b0c10;
+    --surface: #14161c;
+    --surface-2: #1b1e26;
+    --border: #262a35;
+    --text: #eceef1;
+    --text-muted: #9aa0ac;
+    --accent: #6c5ce7;
+    --accent-2: #3fa9f5;
+    --accent-3: #9b5cf6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background:
+      radial-gradient(700px 500px at 12% -10%, rgba(108, 92, 231, 0.16), transparent 60%),
+      radial-gradient(800px 600px at 110% 8%, rgba(63, 169, 245, 0.14), transparent 60%),
+      radial-gradient(650px 550px at 50% 105%, rgba(155, 92, 231, 0.10), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; }
+
+  h1, h2, h3, h4, .brand-name, .btn, .step-num {
+    font-family: "Space Grotesk", -apple-system, sans-serif;
+  }
+
+  .wrap {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 56px;
+  }
+
+  /* Nav */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .brand-name {
+    font-family: "Quicksand", "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 1.6px;
+    color: var(--text);
+  }
+
+  .brand img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    font-size: 15px;
+    color: var(--text-muted);
+  }
+
+  .nav-links a { text-decoration: none; }
+  .nav-links a:hover { color: var(--text); }
+
+  /* Hero */
+  .hero {
+    text-align: center;
+    padding: 130px 0 110px;
+  }
+
+  .hero-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-bottom: 34px;
+    box-shadow: 0 10px 40px rgba(108, 92, 231, 0.35);
+    opacity: 0;
+    animation: bm-fade-up 0.7s ease-out 0s forwards;
+  }
+
+  .hero h1 {
+    font-size: 58px;
+    line-height: 1.12;
+    margin: 0 0 24px;
+    letter-spacing: -1px;
+  }
+
+  .hero h1 .letter {
+    display: inline-block;
+    opacity: 0;
+    animation: bm-letter-loop 10s ease-in-out infinite;
+  }
+
+  @keyframes bm-letter-loop {
+    0% { opacity: 0; transform: translateX(-10px); }
+    6% { opacity: 1; transform: translateX(0); }
+    70% { opacity: 1; transform: translateX(0); }
+    100% { opacity: 0; transform: translateX(10px); }
+  }
+
+  @keyframes bm-fade-up {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero .accent-text {
+    background: linear-gradient(90deg, var(--accent), var(--accent-2), var(--accent-3));
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero p {
+    max-width: 620px;
+    margin: 0 auto 46px;
+    color: var(--text-muted);
+    font-size: 18px;
+    opacity: 0;
+    animation: bm-fade-up 0.7s ease-out 0.6s forwards;
+  }
+
+  .btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    opacity: 0;
+    animation: bm-fade-up 0.7s ease-out 0.75s forwards;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 13px 24px;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background: var(--text);
+    color: #0b0c10;
+  }
+
+  .btn-primary:hover { opacity: 0.9; }
+
+  .btn-secondary {
+    background: transparent;
+    border-color: var(--border);
+    color: var(--text);
+  }
+
+  .btn-secondary:hover { background: var(--surface-2); }
+
+  /* Features */
+  .section {
+    padding: 96px 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .section h2 {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin: 0 0 12px;
+    text-align: center;
+  }
+
+  .section .sub {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14.5px;
+    margin: 0 0 50px;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+  }
+
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px 24px;
+  }
+
+  .feature-card .icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: var(--surface-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    color: var(--accent);
+  }
+
+  .feature-card .icon svg { width: 20px; height: 20px; }
+
+  .feature-card h3 {
+    font-size: 15.5px;
+    margin: 0 0 6px;
+  }
+
+  .feature-card p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0;
+  }
+
+  /* Install steps */
+  .steps {
+    counter-reset: step;
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .step:last-child { border-bottom: none; }
+
+  .step-num {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .step-body h4 {
+    margin: 0 0 4px;
+    font-size: 14.5px;
+  }
+
+  .step-body p {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--text-muted);
+  }
+
+  .step-body code {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-size: 12.5px;
+  }
+
+  /* Footer */
+  footer {
+    padding: 32px 0;
+    border-top: 1px solid var(--border);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  footer a { text-decoration: underline; }
+
+  @media (max-width: 720px) {
+    .wrap { padding: 0 24px; }
+    .hero { padding: 90px 0 70px; }
+    .section { padding: 60px 0; }
+    .features { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 34px; }
+    .section h2 { font-size: 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav>
+    <div class="brand">
+      <img src="../frontend/public/icons/icon128.png" alt="BrowserMind" />
+      <span class="brand-name">BrowserMind</span>
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <img class="hero-icon" src="../frontend/public/icons/icon128.png" alt="" />
+    <h1><span class="letter" style="animation-delay:0.00s">Y</span><span class="letter" style="animation-delay:0.09s">o</span><span class="letter" style="animation-delay:0.18s">u</span><span class="letter" style="animation-delay:0.27s">r</span> <span class="letter accent-text" style="animation-delay:0.36s; background-position-x:0%">A</span><span class="letter accent-text" style="animation-delay:0.45s; background-position-x:10%">I</span><span class="letter accent-text" style="animation-delay:0.54s; background-position-x:20%">-</span><span class="letter accent-text" style="animation-delay:0.63s; background-position-x:30%">p</span><span class="letter accent-text" style="animation-delay:0.72s; background-position-x:40%">o</span><span class="letter accent-text" style="animation-delay:0.81s; background-position-x:50%">w</span><span class="letter accent-text" style="animation-delay:0.90s; background-position-x:60%">e</span><span class="letter accent-text" style="animation-delay:0.99s; background-position-x:70%">r</span><span class="letter accent-text" style="animation-delay:1.08s; background-position-x:80%">e</span><span class="letter accent-text" style="animation-delay:1.17s; background-position-x:90%">d</span><br />
+      <span class="letter" style="animation-delay:1.26s">b</span><span class="letter" style="animation-delay:1.35s">r</span><span class="letter" style="animation-delay:1.44s">o</span><span class="letter" style="animation-delay:1.53s">w</span><span class="letter" style="animation-delay:1.62s">s</span><span class="letter" style="animation-delay:1.71s">i</span><span class="letter" style="animation-delay:1.80s">n</span><span class="letter" style="animation-delay:1.89s">g</span> <span class="letter" style="animation-delay:1.98s">a</span><span class="letter" style="animation-delay:2.07s">s</span><span class="letter" style="animation-delay:2.16s">s</span><span class="letter" style="animation-delay:2.25s">i</span><span class="letter" style="animation-delay:2.34s">s</span><span class="letter" style="animation-delay:2.43s">t</span><span class="letter" style="animation-delay:2.52s">a</span><span class="letter" style="animation-delay:2.61s">n</span><span class="letter" style="animation-delay:2.70s">t</span>
+    </h1>
+    <p>
+      BrowserMind reads your open tabs, routes to the right specialist agent,
+      remembers what matters, and always asks before it acts — all from a
+      sidebar that lives right inside Chrome.
+    </p>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="#install">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 4a2 2 0 110 4 2 2 0 010-4zm-6.9 4.5a8 8 0 0113.8 0l-3.46 2A4 4 0 0012 10a4 4 0 00-3.44 2l-3.46-2z"/></svg>
+        Install extension
+      </a>
+      <a class="btn btn-secondary" href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">
+        View on GitHub
+      </a>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="features">
+  <section class="section">
+    <h2>What it does</h2>
+    <p class="sub">Six modules working together, all inside one sidebar.</p>
+    <div class="features">
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"/><rect x="14" y="5" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        <h3>Tab Intelligence & Agents</h3>
+        <p>Reads your open tabs and routes chat to specialized agents for coding, research, learning, or career questions.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>
+        </div>
+        <h3>Quick Actions Toolbar</h3>
+        <p>Select any text on any page to Explain, Summarize, Simplify, Define, or turn it into a quiz — instantly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg>
+        </div>
+        <h3>Quiz Generator</h3>
+        <p>Turns whatever you're reading into a short AI-generated quiz on its own page — great for studying.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        </div>
+        <h3>Memory & Personalization</h3>
+        <p>Remembers past interactions via a RAG-style memory store, with a panel to view or forget anything, anytime.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
+        </div>
+        <h3>Secure Sign-In</h3>
+        <p>Google sign-in keeps your chats and memory tied to your account, backed by a real MySQL database.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M5 11l7-7 7 7"/></svg>
+        </div>
+        <h3>Page Summaries</h3>
+        <p>One click gives you a clean summary of the page you're on, plus smart follow-up questions to ask next.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap" id="install">
+  <section class="section">
+    <h2>Install it</h2>
+    <p class="sub">Not on the Chrome Web Store yet — here's how to run it locally.</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>Clone the repo</h4>
+          <p><code>git clone https://github.com/madhwanibhumika24/BrowserMind.git</code></p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>Start the backend</h4>
+          <p>Follow <code>backend/README.md</code> to set up the virtual environment, install dependencies, and run the FastAPI server.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>Load the extension</h4>
+          <p>Open <code>chrome://extensions</code>, enable Developer mode, click "Load unpacked", and select the <code>frontend</code> folder.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>Sign in and go</h4>
+          <p>Click the BrowserMind icon on any page, sign in with Google, and start chatting.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer>
+  Built by Bhumika Madhwani &amp; Swaroop More ·
+  <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">Source on GitHub</a>
+</footer>
+
+</body>
+</html>
