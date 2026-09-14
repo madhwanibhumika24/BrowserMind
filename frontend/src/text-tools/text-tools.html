@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BrowserMind Text Tools</title>
+  <link rel="stylesheet" href="../shared/tokens.css" />
+  <link rel="stylesheet" href="../shared/components.css" />
+  <link rel="stylesheet" href="text-tools.css" />
+</head>
+<body>
+  <div class="bg-dots"></div>
+  <div id="tools-app" class="page-shell">
+    <header>
+      <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
+      <div class="tools-heading">
+        <span class="hero-tag">✨ No sign-in needed</span>
+        <h1>Text <span class="text-gradient">Tools</span></h1>
+        <p class="tools-subtitle">Fix grammar or translate text right in your browser - nothing is tied to any account.</p>
+      </div>
+    </header>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="grammar">Grammar Checker</button>
+      <button class="mode-tab" data-mode="translate">Translate</button>
+    </div>
+
+    <div id="grammar-panel" class="tool-card">
+      <label for="grammar-input">Your text</label>
+      <textarea id="grammar-input" rows="7" placeholder="Paste or type text to fix..."></textarea>
+
+      <button id="grammar-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Check grammar
+      </button>
+      <p id="grammar-error" class="tool-error hidden"></p>
+
+      <div id="grammar-result" class="result-block hidden">
+        <label>Corrected text</label>
+        <textarea id="grammar-output" rows="7" readonly></textarea>
+        <button id="grammar-copy-btn" class="download-btn">Copy corrected text</button>
+      </div>
+    </div>
+
+    <div id="translate-panel" class="tool-card hidden">
+      <label for="translate-input">Your text</label>
+      <textarea id="translate-input" rows="6" placeholder="Paste or type text to translate..."></textarea>
+
+      <label for="translate-language" class="pages-label">Translate to</label>
+      <select id="translate-language">
+        <option value="Spanish">Spanish</option>
+        <option value="French">French</option>
+        <option value="German">German</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Japanese">Japanese</option>
+        <option value="Chinese (Simplified)">Chinese (Simplified)</option>
+        <option value="Arabic">Arabic</option>
+        <option value="Portuguese">Portuguese</option>
+        <option value="Russian">Russian</option>
+        <option value="Korean">Korean</option>
+        <option value="English">English</option>
+      </select>
+
+      <button id="translate-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Translate
+      </button>
+      <p id="translate-error" class="tool-error hidden"></p>
+
+      <div id="translate-result" class="result-block hidden">
+        <label>Translation</label>
+        <textarea id="translate-output" rows="6" readonly></textarea>
+        <button id="translate-copy-btn" class="download-btn">Copy translation</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="text-tools.js"></script>
+</body>
+</html>

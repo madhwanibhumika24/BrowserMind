@@ -1,0 +1,42 @@
+/* Text Tools - page-specific rules only. Shared tokens, page shell, header,
+   tool-card, mode-tabs, buttons, and focus rings all come from
+   ../shared/tokens.css + ../shared/components.css (linked in the HTML
+   before this file). */
+
+#tools-app { max-width: 560px; }
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-md);
+  color: var(--bm-text);
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--bm-accent);
+}
+
+#translate-language {
+  width: 100%;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-md);
+  color: var(--bm-text);
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 4px;
+}
+
+.result-block {
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid var(--bm-border);
+}

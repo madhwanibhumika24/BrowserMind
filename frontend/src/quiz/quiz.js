@@ -1,4 +1,7 @@
 import { generateQuiz } from "../utils/api.js";
+import { applyStoredTheme } from "../utils/theme.js";
+
+applyStoredTheme();
 
 const content = document.getElementById("quiz-content");
 
@@ -10,19 +13,26 @@ function escapeHtml(text) {
 
 function renderQuestion(items, category, index, score) {
   if (index >= items.length) {
+    const pct = items.length ? Math.round((score / items.length) * 100) : 0;
     content.innerHTML = `
       <div class="quiz-done">
+        <div class="quiz-score-ring" style="--pct:${pct}"><span>${pct}%</span></div>
         <h2>Quiz complete!</h2>
-        <p>You scored ${score} / ${items.length} on this ${category} page.</p>
-        <button id="retry-btn">Take another look at this page</button>
+        <p>You scored ${score} / ${items.length} on this ${escapeHtml(category)} page.</p>
+        <button id="retry-btn">Close this tab</button>
       </div>`;
     document.getElementById("retry-btn").addEventListener("click", () => window.close());
     return;
   }
 
   const item = items[index];
+  const progressPct = Math.round((index / items.length) * 100);
   content.innerHTML = `
-    <p class="quiz-progress">Question ${index + 1} of ${items.length} - ${category}</p>
+    <div class="quiz-progress-row">
+      <span class="quiz-category-chip">${escapeHtml(category)}</span>
+      <span class="quiz-progress-text">Question ${index + 1} of ${items.length}</span>
+    </div>
+    <div class="quiz-progress-track"><div class="quiz-progress-fill" style="width:${progressPct}%"></div></div>
     <p class="quiz-question">${escapeHtml(item.question)}</p>
     <div class="quiz-options"></div>`;
 
@@ -52,7 +62,7 @@ async function start() {
   const { browsermindQuizTab } = await chrome.storage.local.get("browsermindQuizTab");
 
   if (!browsermindQuizTab) {
-    content.innerHTML = "<p>No page data found. Open this from the BrowserMind sidebar.</p>";
+    content.innerHTML = `<p class="quiz-error">No page data found. Open this from the BrowserMind sidebar.</p>`;
     return;
   }
 
@@ -60,7 +70,7 @@ async function start() {
     const { category, items } = await generateQuiz(browsermindQuizTab);
     renderQuestion(items, category, 0, 0);
   } catch (err) {
-    content.innerHTML = "<p>Could not generate a quiz for this page.</p>";
+    content.innerHTML = `<p class="quiz-error">Could not generate a quiz for this page.</p>`;
   }
 }
 

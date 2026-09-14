@@ -5,6 +5,7 @@ import {
   getMemory,
   deleteMemory,
 } from "../utils/api.js";
+import { signInWithGoogle, signOut, getStoredAuth } from "../utils/auth.js";
 
 // sessionId and historyMessages can both get replaced once we restore a
 // saved chat for this site (see restoreHistory below), so they're `let`.
@@ -17,15 +18,40 @@ const input = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
 const summarizeBtn = document.getElementById("summarize-btn");
 const quizBtn = document.getElementById("quiz-btn");
+const homeBtn = document.getElementById("home-btn");
 const memoryBtn = document.getElementById("memory-btn");
-const memoryPanel = document.getElementById("memory-panel");
+const memoryView = document.getElementById("memory-view");
+const memoryBackBtn = document.getElementById("memory-back-btn");
 const memoryList = document.getElementById("memory-list");
 const memoryRefreshBtn = document.getElementById("memory-refresh-btn");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const closeBtn = document.getElementById("close-btn");
-const summaryCta = document.getElementById("summary-cta");
-const summaryCtaBtn = document.getElementById("summary-cta-btn");
+const logoIcon = document.querySelector(".logo-icon");
+const homeView = document.getElementById("home-view");
+const homeSummarizeBtn = document.getElementById("home-summarize-btn");
+const homeTabsBtn = document.getElementById("home-tabs-btn");
+const homeQuizBtn = document.getElementById("home-quiz-btn");
+const homeMemoryBtn = document.getElementById("home-memory-btn");
+const homeFormsBtn = document.getElementById("home-forms-btn");
+const formsBtn = document.getElementById("forms-btn");
+const homeNewChatBtn = document.getElementById("home-newchat-btn");
+const homeGreetingName = document.getElementById("home-greeting-name");
+const authGate = document.getElementById("auth-gate");
+const googleLoginBtn = document.getElementById("google-login-btn");
+const googleSignupBtn = document.getElementById("google-signup-btn");
+const accountBtn = document.getElementById("account-btn");
+const accountPanel = document.getElementById("account-panel");
+const accountPanelAvatar = document.getElementById("account-panel-avatar");
+const accountName = document.getElementById("account-name");
+const accountEmail = document.getElementById("account-email");
+const signOutBtn = document.getElementById("sign-out-btn");
+const moreToolsBtn = document.getElementById("more-tools-btn");
+const moreToolsPanel = document.getElementById("more-tools-panel");
+const morePdfToolsBtn = document.getElementById("more-pdf-tools-btn");
+const moreChatDocBtn = document.getElementById("more-chat-doc-btn");
+const moreTextToolsBtn = document.getElementById("more-text-tools-btn");
+const moreMindmapBtn = document.getElementById("more-mindmap-btn");
 
 function escapeHtml(text) {
   const div = document.createElement("div");
@@ -54,12 +80,72 @@ function renderMessage(text, who) {
   chatLog.scrollTop = chatLog.scrollHeight;
 }
 
+// Home, the chat log, and Memory are three mutually exclusive full views in
+// the same space - showing one always hides the other two, so you never
+// end up looking at two screens stacked on top of each other at once
+// (which is what the old toggle-a-panel-open-on-top-of-whatever's-already-
+// showing approach used to do for Memory).
+const VIEWS = { home: homeView, chat: chatLog, memory: memoryView };
+
+function showView(name) {
+  for (const [key, el] of Object.entries(VIEWS)) {
+    el.classList.toggle("hidden", key !== name);
+  }
+  accountPanel.classList.add("hidden");
+}
+
+// Swaps the "What can I do for you?" home screen out for the chat log -
+// called the moment there's actually a conversation to show.
+function showChatLog() {
+  showView("chat");
+}
+
+// Swaps back to the home screen - used when starting a fresh chat.
+function showHomeView() {
+  showView("home");
+}
+
+// Same swap, but doesn't touch the conversation - just navigation back to
+// the home screen, for when you want to leave without starting over.
+function goHome() {
+  showView("home");
+}
+
+// Switches to the Memory view and kicks off a fresh load every time - it's
+// no longer a toggle-open/toggle-closed panel, so "open" always means a
+// clean, up-to-date list rather than whatever was last loaded.
+function openMemoryView() {
+  showView("memory");
+  loadMemory();
+}
+
 // Draws a new message AND saves it, so the conversation survives closing
 // and reopening the sidebar on this site.
 function appendMessage(text, who) {
   renderMessage(text, who);
   historyMessages.push({ text, who });
   saveHistory();
+  if (who === "assistant") pulseLogo();
+}
+
+// Shows a message WITHOUT saving it to this site's persisted history. Used
+// for one-off action feedback (e.g. "Could not summarize tabs right now")
+// that isn't part of an actual back-and-forth - if we saved these, a single
+// failed click (backend briefly down, etc.) would get stuck as the first
+// thing you see every time you reopen the sidebar on that site, forever,
+// even after the backend is back up. Real conversation turns (typed
+// questions and their replies) still persist via appendMessage above.
+function appendTransient(text, who) {
+  renderMessage(text, who);
+  if (who === "assistant") pulseLogo();
+}
+
+function pulseLogo() {
+  // Restart the animation even if it's already mid-pulse from a fast
+  // follow-up reply: remove the class, force a reflow, then re-add it.
+  logoIcon.classList.remove("logo-pulse");
+  void logoIcon.offsetWidth;
+  logoIcon.classList.add("logo-pulse");
 }
 
 function saveHistory() {
@@ -90,7 +176,7 @@ async function restoreHistory() {
     sessionId = stored.sessionId || sessionId;
     historyMessages = stored.messages;
     historyMessages.forEach(({ text, who }) => renderMessage(text, who));
-    summaryCta.classList.add("hidden");
+    showChatLog();
   }
 }
 
@@ -98,7 +184,11 @@ function showLoading() {
   const el = document.createElement("div");
   el.className = "msg msg-assistant msg-loading";
   el.id = "loading-indicator";
-  el.textContent = "BrowserMind is thinking...";
+  el.innerHTML = `
+    <span class="thinking-dots">
+      <span></span><span></span><span></span>
+    </span>
+  `;
   chatLog.appendChild(el);
   chatLog.scrollTop = chatLog.scrollHeight;
 }
@@ -136,7 +226,7 @@ function renderSuggestions(questions) {
 }
 
 async function sendChat(message, displayText) {
-  summaryCta.classList.add("hidden");
+  showChatLog();
   appendMessage(displayText || message, "user");
   showLoading();
 
@@ -171,7 +261,7 @@ async function handleSend() {
 }
 
 async function summarizePage() {
-  summaryCta.classList.add("hidden");
+  showChatLog();
   showLoading();
   const activeTab = await getActiveTab();
   const excerpt = await getPageExcerpt(activeTab.id);
@@ -188,7 +278,7 @@ async function summarizePage() {
     renderSuggestions(questions);
   } catch (err) {
     hideLoading();
-    appendMessage("Ask me anything about this page.", "assistant");
+    appendTransient("Ask me anything about this page.", "assistant");
   }
 }
 
@@ -220,18 +310,141 @@ themeToggleBtn.addEventListener("click", () => {
   chrome.storage.local.set({ [THEME_KEY]: next });
 });
 
+const authErrorEl = document.getElementById("auth-error");
+
+function showSignedIn(auth) {
+  authGate.classList.add("hidden");
+  document.body.classList.remove("signed-out");
+  accountName.textContent = auth.name || "Signed in";
+  accountEmail.textContent = auth.email || "";
+
+  const initial = (auth.name || auth.email || "?").trim().charAt(0);
+  accountBtn.textContent = initial;
+  accountPanelAvatar.textContent = initial;
+
+  const firstName = (auth.name || "").split(" ")[0];
+  homeGreetingName.textContent = firstName ? `, ${firstName}` : "";
+}
+
+async function checkAuth() {
+  const auth = await getStoredAuth();
+  if (auth?.token) {
+    showSignedIn(auth);
+  } else {
+    authGate.classList.remove("hidden");
+    document.body.classList.add("signed-out");
+  }
+}
+
+// Log In and Sign Up both go through the exact same Google Sign-In flow -
+// the backend decides whether that Google account is new (sign-up) or
+// returning (log-in) via find_or_create_user. Two buttons just match the
+// familiar convention; there's only one auth path underneath.
+async function handleGoogleAuth() {
+  authErrorEl.classList.add("hidden");
+  googleLoginBtn.disabled = true;
+  googleSignupBtn.disabled = true;
+  try {
+    const auth = await signInWithGoogle();
+    showSignedIn(auth);
+  } catch (err) {
+    console.error("BrowserMind sign-in error:", err);
+    authErrorEl.textContent = `Sign-in failed: ${err.message}`;
+    authErrorEl.classList.remove("hidden");
+  } finally {
+    googleLoginBtn.disabled = false;
+    googleSignupBtn.disabled = false;
+  }
+}
+
+googleLoginBtn.addEventListener("click", handleGoogleAuth);
+googleSignupBtn.addEventListener("click", handleGoogleAuth);
+
+function toggleAccountPanel() {
+  accountPanel.classList.toggle("hidden");
+}
+
+accountBtn.addEventListener("click", toggleAccountPanel);
+
+const signOutLabel = signOutBtn.querySelector(".account-panel-item-label");
+
+signOutBtn.addEventListener("click", async () => {
+  // Give immediate feedback instead of the panel just sitting there while
+  // signOut()'s network call is in flight - and stop a second click from
+  // firing a second sign-out while the first is still running.
+  signOutBtn.disabled = true;
+  if (signOutLabel) signOutLabel.textContent = "Logging out...";
+
+  try {
+    await signOut();
+  } finally {
+    accountPanel.classList.add("hidden");
+    authGate.classList.remove("hidden");
+    document.body.classList.add("signed-out");
+    signOutBtn.disabled = false;
+    if (signOutLabel) signOutLabel.textContent = "Sign out";
+  }
+});
+
 function truncate(text, maxLen = 110) {
   return text.length > maxLen ? `${text.slice(0, maxLen)}...` : text;
 }
 
+// Builds one of the "nothing to show" states (loading / empty / error) as
+// an icon + title + short explanation, instead of a single line of text
+// left floating in an otherwise blank panel.
+function renderEmptyState(container, { icon, danger, title, text, retry }) {
+  container.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "bm-empty-state";
+
+  const iconEl = document.createElement("div");
+  iconEl.className = danger ? "bm-empty-icon danger" : "bm-empty-icon";
+  iconEl.innerHTML = icon;
+  wrap.appendChild(iconEl);
+
+  const titleEl = document.createElement("p");
+  titleEl.className = "bm-empty-title";
+  titleEl.textContent = title;
+  wrap.appendChild(titleEl);
+
+  if (text) {
+    const textEl = document.createElement("p");
+    textEl.className = "bm-empty-text";
+    textEl.textContent = text;
+    wrap.appendChild(textEl);
+  }
+
+  if (retry) {
+    const retryBtn = document.createElement("button");
+    retryBtn.className = "bm-empty-retry";
+    retryBtn.textContent = "Try again";
+    retryBtn.addEventListener("click", retry);
+    wrap.appendChild(retryBtn);
+  }
+
+  container.appendChild(wrap);
+}
+
+const MEMORY_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>';
+const WARNING_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9L2.8 17a1.8 1.8 0 0 0 1.5 2.7h15.4a1.8 1.8 0 0 0 1.5-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0z"/></svg>';
+
 async function loadMemory() {
-  memoryList.innerHTML = `<p class="memory-empty">Loading...</p>`;
+  memoryList.innerHTML = `<div class="bm-empty-state"><span class="bm-mini-spinner"></span><p class="bm-empty-title">Loading memory...</p></div>`;
 
   try {
     const items = await getMemory(sessionId);
     renderMemoryItems(items);
   } catch (err) {
-    memoryList.innerHTML = `<p class="memory-empty">Could not load memory right now.</p>`;
+    renderEmptyState(memoryList, {
+      icon: WARNING_ICON,
+      danger: true,
+      title: "Could not load memory",
+      text: "The BrowserMind backend didn't respond. Make sure it's running, then try again.",
+      retry: loadMemory,
+    });
   }
 }
 
@@ -239,7 +452,11 @@ function renderMemoryItems(items) {
   memoryList.innerHTML = "";
 
   if (!items.length) {
-    memoryList.innerHTML = `<p class="memory-empty">Nothing remembered yet for this chat.</p>`;
+    renderEmptyState(memoryList, {
+      icon: MEMORY_ICON,
+      title: "Nothing remembered yet",
+      text: "As you chat on this site, key details will show up here for next time.",
+    });
     return;
   }
 
@@ -267,7 +484,11 @@ function renderMemoryItems(items) {
         await deleteMemory(item.id);
         row.remove();
         if (!memoryList.children.length) {
-          memoryList.innerHTML = `<p class="memory-empty">Nothing remembered yet for this chat.</p>`;
+          renderEmptyState(memoryList, {
+            icon: MEMORY_ICON,
+            title: "Nothing remembered yet",
+            text: "As you chat on this site, key details will show up here for next time.",
+          });
         }
       } catch (err) {
         // If delete fails, leave the item in place rather than lying about it.
@@ -291,6 +512,7 @@ function formatGroupsAsText(groups) {
 }
 
 async function handleSummarize() {
+  showChatLog();
   const tabs = await new Promise((resolve) => chrome.tabs.query({}, resolve));
   const tabList = tabs.map((t) => ({ tab_id: t.id, url: t.url, title: t.title }));
 
@@ -298,7 +520,7 @@ async function handleSummarize() {
     const result = await summarizeTabs(tabList);
     appendMessage(formatGroupsAsText(result.groups), "assistant");
   } catch (err) {
-    appendMessage("Could not summarize tabs right now.", "assistant");
+    appendTransient("Could not summarize tabs right now.", "assistant");
   }
 }
 
@@ -318,35 +540,102 @@ async function handleQuiz() {
   chrome.tabs.create({ url: chrome.runtime.getURL("src/quiz/quiz.html") });
 }
 
+// Reuses an already-open Forms tab instead of stacking up a new one every
+// time - clicking "Create form" repeatedly (e.g. while testing) used to
+// leave a trail of duplicate BrowserMind Forms tabs behind.
+async function openFormGenerator() {
+  const url = chrome.runtime.getURL("src/forms/form-generator.html");
+  const [existing] = await chrome.tabs.query({ url });
+  if (existing) {
+    chrome.tabs.update(existing.id, { active: true });
+    chrome.windows.update(existing.windowId, { focused: true });
+  } else {
+    chrome.tabs.create({ url });
+  }
+}
+
+function openPdfTools() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("src/pdf-tools/pdf-tools.html") });
+  moreToolsPanel.classList.add("hidden");
+  moreToolsBtn.classList.remove("active");
+}
+
+function openDocumentChat() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("src/document-chat/document-chat.html") });
+  moreToolsPanel.classList.add("hidden");
+  moreToolsBtn.classList.remove("active");
+}
+
+function openTextTools() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("src/text-tools/text-tools.html") });
+  moreToolsPanel.classList.add("hidden");
+  moreToolsBtn.classList.remove("active");
+}
+
+function openMindmap() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("src/mindmap/mindmap.html") });
+  moreToolsPanel.classList.add("hidden");
+  moreToolsBtn.classList.remove("active");
+}
+
 sendBtn.addEventListener("click", handleSend);
 input.addEventListener("keydown", (e) => {
   if (e.key === "Enter") handleSend();
 });
 summarizeBtn.addEventListener("click", handleSummarize);
 quizBtn.addEventListener("click", handleQuiz);
-memoryBtn.addEventListener("click", () => {
-  memoryPanel.classList.toggle("hidden");
-  if (!memoryPanel.classList.contains("hidden")) loadMemory();
-});
+memoryBtn.addEventListener("click", openMemoryView);
+memoryBackBtn.addEventListener("click", goHome);
 memoryRefreshBtn.addEventListener("click", loadMemory);
-clearChatBtn.addEventListener("click", () => {
+
+function startNewChat() {
   chatLog.innerHTML = "";
   historyMessages = [];
   sessionId = crypto.randomUUID();
   saveHistory();
-  summaryCta.classList.remove("hidden");
-  memoryPanel.classList.add("hidden");
+  showHomeView();
+}
+
+clearChatBtn.addEventListener("click", startNewChat);
+homeNewChatBtn.addEventListener("click", startNewChat);
+formsBtn.addEventListener("click", openFormGenerator);
+homeFormsBtn.addEventListener("click", openFormGenerator);
+
+moreToolsBtn.addEventListener("click", (e) => {
+  e.stopPropagation();
+  moreToolsPanel.classList.toggle("hidden");
+  moreToolsBtn.classList.toggle("active", !moreToolsPanel.classList.contains("hidden"));
 });
+morePdfToolsBtn.addEventListener("click", openPdfTools);
+moreChatDocBtn.addEventListener("click", openDocumentChat);
+moreTextToolsBtn.addEventListener("click", openTextTools);
+moreMindmapBtn.addEventListener("click", openMindmap);
+document.addEventListener("click", (e) => {
+  if (!moreToolsPanel.classList.contains("hidden") && !e.target.closest(".side-rail-more")) {
+    moreToolsPanel.classList.add("hidden");
+    moreToolsBtn.classList.remove("active");
+  }
+});
+
+homeBtn.addEventListener("click", goHome);
+logoIcon.addEventListener("click", goHome);
 closeBtn.addEventListener("click", () => {
   window.parent.postMessage({ type: "BROWSERMIND_CLOSE" }, "*");
 });
-summaryCtaBtn.addEventListener("click", summarizePage);
+homeSummarizeBtn.addEventListener("click", summarizePage);
+homeTabsBtn.addEventListener("click", handleSummarize);
+homeQuizBtn.addEventListener("click", handleQuiz);
+homeMemoryBtn.addEventListener("click", openMemoryView);
 
 window.addEventListener("message", (event) => {
   if (event.data?.type === "BROWSERMIND_QUICK_ASK") {
     sendChat(event.data.query, event.data.label);
   }
+  if (event.data?.type === "BROWSERMIND_FOCUS_INPUT") {
+    input.focus();
+  }
 });
 
 loadTheme();
+checkAuth();
 restoreHistory();

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BrowserMind PDF Tools</title>
+  <link rel="stylesheet" href="../shared/tokens.css" />
+  <link rel="stylesheet" href="../shared/components.css" />
+  <link rel="stylesheet" href="pdf-tools.css" />
+</head>
+<body>
+  <div class="bg-dots"></div>
+  <div id="tools-app" class="page-shell">
+    <header>
+      <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
+      <div class="tools-heading">
+        <span class="hero-tag">✨ No sign-in needed</span>
+        <h1>PDF & Image <span class="text-gradient">Tools</span></h1>
+        <p class="tools-subtitle">Merge, split, or extract text from files right in your browser - nothing is tied to any account.</p>
+      </div>
+    </header>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" data-mode="merge">Merge PDF</button>
+      <button class="mode-tab" data-mode="split">Split PDF</button>
+      <button class="mode-tab" data-mode="ocr">Image to Text</button>
+    </div>
+
+    <div id="merge-panel" class="tool-card">
+      <label for="merge-file-input">Upload PDFs to merge (in order)</label>
+      <label id="merge-dropzone" for="merge-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="merge-dropzone-text">Click to choose 2+ PDFs</span>
+        <span class="dropzone-hint">Files merge in the order you select them</span>
+      </label>
+      <input id="merge-file-input" type="file" accept=".pdf" multiple class="hidden" />
+
+      <div id="merge-file-list"></div>
+
+      <button id="merge-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Merge PDFs
+      </button>
+      <p id="merge-error" class="tool-error hidden"></p>
+      <a id="merge-download" class="download-btn hidden" download="merged.pdf">Download merged.pdf</a>
+    </div>
+
+    <div id="split-panel" class="tool-card hidden">
+      <label for="split-file-input">Upload a PDF to split</label>
+      <label id="split-dropzone" for="split-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="split-dropzone-text">Click to choose a PDF</span>
+        <span class="dropzone-hint">Supports PDF only</span>
+      </label>
+      <input id="split-file-input" type="file" accept=".pdf" class="hidden" />
+
+      <label for="split-pages" class="pages-label">Pages to extract</label>
+      <input id="split-pages" type="text" placeholder="e.g. 1-3, 5, 8-9" />
+      <p class="dropzone-hint pages-hint">Comma-separated page numbers or ranges (1-indexed)</p>
+
+      <button id="split-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Split PDF
+      </button>
+      <p id="split-error" class="tool-error hidden"></p>
+      <a id="split-download" class="download-btn hidden" download="split.pdf">Download split.pdf</a>
+    </div>
+
+    <div id="ocr-panel" class="tool-card hidden">
+      <label for="ocr-file-input">Upload an image</label>
+      <label id="ocr-dropzone" for="ocr-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        <span id="ocr-dropzone-text">Click to choose an image</span>
+        <span class="dropzone-hint">Supports PNG, JPG, WEBP, BMP, TIFF</span>
+      </label>
+      <input id="ocr-file-input" type="file" accept=".png,.jpg,.jpeg,.webp,.bmp,.tiff" class="hidden" />
+
+      <button id="ocr-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Extract text
+      </button>
+      <p id="ocr-error" class="tool-error hidden"></p>
+      <p id="ocr-note" class="dropzone-hint ocr-note hidden">First OCR call may be slow, or fail with a setup error, if the server's OCR engine isn't installed yet - see backend/app/ocr/extract.py for setup notes.</p>
+
+      <div id="ocr-result" class="hidden">
+        <label>Extracted text</label>
+        <textarea id="ocr-text" rows="8" readonly></textarea>
+        <button id="ocr-copy-btn" class="download-btn">Copy text</button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="pdf-tools.js"></script>
+</body>
+</html>

@@ -36,3 +36,13 @@ def group_tabs(tabs):
             groups["Other"].append(tab)
 
     return groups
+
+
+def detect_category(tab):
+    """Same keyword check as group_tabs, but for a single tab."""
+    text_to_check = (tab.url + " " + tab.title).lower()
+    for category, keywords in CATEGORIES.items():
+        for keyword in keywords:
+            if keyword in text_to_check:
+                return category
+    return "Other"

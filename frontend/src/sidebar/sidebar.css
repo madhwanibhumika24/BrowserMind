@@ -1,27 +1,14 @@
-:root {
-  --bm-bg: #0e1014;
-  --bm-surface: #171a20;
-  --bm-surface-hover: #20242c;
-  --bm-text: #eceef1;
-  --bm-text-muted: #8b909c;
-  --bm-accent: #6c5ce7;
-  --bm-border: #262a33;
-}
-
-/* Same variable names, light values - swapped in via data-theme on <html>.
-   Everything below already styles off these variables, so this one block
-   is enough to re-skin the whole sidebar. */
-:root[data-theme="light"] {
-  --bm-bg: #f5f6f8;
-  --bm-surface: #ffffff;
-  --bm-surface-hover: #edeef2;
-  --bm-text: #1b1e24;
-  --bm-text-muted: #6b7280;
-  --bm-accent: #6c5ce7;
-  --bm-border: #e2e4ea;
-}
+/* Color tokens (dark default + light override) live in ../shared/tokens.css,
+   linked before this file - keeps the sidebar panel and every standalone
+   tool tab re-skinning from the same single source instead of drifting out
+   of sync (which is how the error-red here used to end up a slightly
+   different shade than the rest of the extension). */
 
 * { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
 
 body {
   margin: 0;
@@ -38,13 +25,525 @@ body {
   display: none !important;
 }
 
+/* One small, very faint light spot drifting slowly - kept deliberately
+   understated (low opacity, small size) rather than a full colorful wash. */
+.bg-drift {
+  position: absolute;
+  z-index: 0;
+  width: 160px;
+  height: 160px;
+  top: 20%;
+  left: 30%;
+  border-radius: 50%;
+  background: var(--bm-accent);
+  filter: blur(70px);
+  opacity: 0.12;
+  pointer-events: none;
+  animation: bm-drift 20s ease-in-out infinite;
+}
+
+@keyframes bm-drift {
+  0%   { transform: translate(0, 0); }
+  50%  { transform: translate(90px, 60px); }
+  100% { transform: translate(0, 0); }
+}
+
 #app {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
 
+.body-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.main-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-rail {
+  flex-shrink: 0;
+  width: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0;
+  border-left: 1px solid var(--bm-border);
+  background: var(--bm-surface);
+}
+
+.side-rail button {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--bm-border);
+  background: transparent;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.side-rail button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.side-rail button:hover {
+  background: var(--bm-surface-hover);
+  color: var(--bm-text);
+  border-color: var(--bm-accent);
+}
+
+.side-rail-more {
+  position: relative;
+}
+
+#more-tools-btn {
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--bm-text);
+}
+
+#more-tools-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: var(--bm-text);
+}
+
+#more-tools-btn.active {
+  background: rgba(108, 92, 231, 0.28);
+  border-color: var(--bm-accent);
+}
+
+#more-tools-panel {
+  position: absolute;
+  top: 0;
+  right: 100%;
+  margin-right: 10px;
+  width: 248px;
+  max-width: calc(100vw - 24px);
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+  z-index: 30;
+}
+
+.more-tools-header {
+  color: var(--bm-text-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 6px 10px 6px;
+}
+
+/* Scoped with the #more-tools-panel ancestor so these definitely win over
+   the generic ".side-rail button { width: 32px; height: 32px; ... }" rule -
+   without this, that rule's higher specificity (class+element) was
+   silently squashing these buttons down to tiny icon-only squares. */
+#more-tools-panel .more-tool-item {
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--bm-text);
+  padding: 9px 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+
+#more-tools-panel .more-tool-item + .more-tool-item {
+  margin-top: 2px;
+}
+
+#more-tools-panel .more-tool-item span:last-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#more-tools-panel .more-tool-item:hover {
+  background: var(--bm-surface-hover);
+}
+
+#more-tools-panel .more-tool-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(108, 92, 231, 0.16);
+  color: var(--bm-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#more-tools-panel .more-tool-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+body.signed-out .side-rail {
+  border-left-color: transparent;
+  background: transparent;
+}
+
+/* Before sign-in, only the theme toggle and close button make sense - every
+   other feature needs a signed-in user, so keep them out of sight instead
+   of showing controls that would just fail if clicked. */
+body.signed-out #account-btn,
+body.signed-out #home-btn,
+body.signed-out #memory-btn,
+body.signed-out #summarize-btn,
+body.signed-out #quiz-btn,
+body.signed-out #clear-chat-btn,
+body.signed-out #forms-btn,
+body.signed-out .side-rail-more,
+body.signed-out #home-view,
+body.signed-out #chat-log,
+body.signed-out footer {
+  display: none;
+}
+
+#auth-gate {
+  position: absolute;
+  inset: 0;
+  top: 58px; /* sits below the header, so Close still works while signed out */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  padding: 24px;
+}
+
+.auth-card {
+  text-align: center;
+  max-width: 260px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 16px;
+  padding: 32px 26px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  animation: bm-card-glow 3.5s ease-in-out infinite;
+}
+
+@keyframes bm-card-glow {
+  0%, 100% {
+    border-color: var(--bm-border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 0 rgba(196, 181, 253, 0);
+  }
+  50% {
+    border-color: rgba(196, 181, 253, 0.55);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25), 0 0 24px rgba(196, 181, 253, 0.22);
+  }
+}
+
+.auth-icon-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 14px;
+}
+
+.auth-icon-wrap::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--bm-accent),
+    #3fa9f5,
+    #9b5cf6,
+    var(--bm-accent)
+  );
+  animation: bm-spin 4s linear infinite;
+}
+
+.auth-icon {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--bm-surface), 0 6px 18px rgba(108, 92, 231, 0.35);
+}
+
+@keyframes bm-spin {
+  to { transform: rotate(360deg); }
+}
+
+.auth-card h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--bm-text);
+}
+
+.auth-card p {
+  color: var(--bm-text-muted);
+  font-size: 12.5px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.auth-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.auth-btn {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 9px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.auth-btn-primary {
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  color: var(--bm-text);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.auth-btn-primary::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(255, 255, 255, 0.35),
+    transparent
+  );
+  animation: bm-shimmer 3.5s ease-in-out infinite;
+}
+
+:root[data-theme="light"] .auth-btn-primary::after {
+  background: linear-gradient(
+    100deg,
+    transparent,
+    rgba(108, 92, 231, 0.18),
+    transparent
+  );
+}
+
+@keyframes bm-shimmer {
+  0%, 15% { left: -60%; }
+  60%, 100% { left: 130%; }
+}
+
+.auth-btn-primary:hover {
+  background: var(--bm-surface-hover);
+}
+
+.auth-btn-secondary {
+  background: var(--bm-accent);
+  border: 1px solid var(--bm-accent);
+  color: #fff;
+}
+
+.auth-btn-secondary:hover {
+  opacity: 0.9;
+}
+
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-card .auth-subtext {
+  color: var(--bm-text-muted);
+  font-size: 11px;
+  margin: 14px 0 0;
+}
+
+#auth-error {
+  color: var(--bm-danger);
+  font-size: 11.5px;
+  margin: 10px 0 0;
+}
+
+/* Left-aligned info row + a divider + a list-item action, mirroring the
+   same layout language as the "+More tools" popover (#more-tools-panel)
+   elsewhere in the sidebar - so the two popovers in this app read as one
+   consistent component instead of each inventing its own layout. */
+#account-panel {
+  position: absolute;
+  z-index: 30;
+  top: 54px;
+  right: 12px;
+  width: 232px;
+  padding: 6px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.account-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px 12px;
+}
+
+.account-panel-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bm-accent), #3fa9f5);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-panel-info {
+  min-width: 0;
+  text-align: left;
+}
+
+#account-name {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bm-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#account-email {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--bm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-panel-divider {
+  height: 1px;
+  background: var(--bm-border);
+  margin: 2px 4px 6px;
+}
+
+/* Same shape as #more-tools-panel .more-tool-item: full-width row, icon
+   chip on the left, hover fill - so both popovers' action rows look and
+   behave identically. */
+.account-panel-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--bm-text);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.account-panel-item:hover {
+  background: var(--bm-surface-hover);
+  color: var(--bm-danger, #e05c5c);
+}
+
+.account-panel-item-icon {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--bm-bg);
+  color: var(--bm-text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-panel-item-icon svg { width: 14px; height: 14px; }
+
+.account-panel-item:hover .account-panel-item-icon {
+  color: var(--bm-danger, #e05c5c);
+}
+
+/* A destructive action (Sign out) gets a standing tint, not just a hover
+   state - otherwise it visually disappears into the plain list-item style
+   used for everything else and doesn't read as the one action here that
+   matters. */
+.account-panel-item.danger {
+  background: rgba(var(--bm-danger-rgb, 224, 92, 92), 0.1);
+  color: var(--bm-danger, #e05c5c);
+}
+
+.account-panel-item.danger .account-panel-item-icon {
+  background: rgba(var(--bm-danger-rgb, 224, 92, 92), 0.16);
+  color: var(--bm-danger, #e05c5c);
+}
+
+.account-panel-item.danger:hover {
+  background: rgba(var(--bm-danger-rgb, 224, 92, 92), 0.18);
+  color: var(--bm-danger, #e05c5c);
+}
+
+.account-panel-item:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
 header {
+  position: relative;
+  z-index: 1; /* paint above .bg-glow, which is position:absolute z-index:0 */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -55,31 +554,46 @@ header {
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 
-.logo {
-  font-weight: 600;
-  font-size: 14px;
-  letter-spacing: 0.2px;
-  color: var(--bm-text);
+.logo-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: block;
+  cursor: pointer;
+}
+
+.logo-pulse {
+  animation: bm-logo-pulse 0.8s ease-out;
+}
+
+@keyframes bm-logo-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0.55); }
+  70%  { box-shadow: 0 0 0 11px rgba(108, 92, 231, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(108, 92, 231, 0); }
 }
 
 .header-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .header-actions button {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  border: none;
-  background: transparent;
+  width: 31px;
+  height: 31px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 0 9px rgba(255, 255, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   color: var(--bm-text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .header-actions button svg {
@@ -88,26 +602,76 @@ header {
 }
 
 .header-actions button:hover {
-  background: var(--bm-surface-hover);
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.9);
   color: var(--bm-text);
+  box-shadow: 0 0 18px rgba(255, 255, 255, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
 }
 
-#memory-panel {
-  border-bottom: 1px solid var(--bm-border);
-  padding: 10px 16px;
-  max-height: 220px;
+.header-actions button:active {
+  transform: translateY(0);
+}
+
+.header-actions .avatar-btn {
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--bm-accent), #3fa9f5);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.header-actions .avatar-btn:hover {
+  background: linear-gradient(135deg, var(--bm-accent), #3fa9f5);
+  box-shadow: 0 0 14px rgba(108, 92, 231, 0.55);
+}
+
+/* Memory is its own full view (same flex:1 sizing as #home-view / #chat-log,
+   and mutually exclusive with them via showView() in sidebar.js) rather
+   than a strip that used to open ON TOP of whichever view was already
+   showing - that read as two screens stacked on each other at once. */
+#memory-view {
+  position: relative;
+  z-index: 1;
+  flex: 1;
   overflow-y: auto;
+  padding: 18px 16px 20px;
 }
 
-#memory-panel-header {
+/* Small muted "go back" link, same look used on the standalone tool pages
+   (Forms, Mindmap, Chat with Document) for visual consistency. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: var(--bm-text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+  transition: color 0.15s ease;
+}
+
+.back-link:hover { color: var(--bm-text); }
+
+.view-header-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  color: var(--bm-text-muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
+  margin-bottom: 12px;
+}
+
+.view-header-row h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--bm-text);
 }
 
 #memory-refresh-btn {
@@ -134,11 +698,82 @@ header {
   color: var(--bm-text);
 }
 
-.memory-empty {
-  color: var(--bm-text-muted);
-  font-size: 12.5px;
+/* Generic "nothing to show" treatment - used for Memory's loading/empty/
+   error states instead of a single line of text floating in a mostly
+   empty panel, which read as unfinished rather than intentional. */
+.bm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
-  margin: 10px 0;
+  gap: 4px;
+  padding: 48px 20px 20px;
+}
+
+.bm-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.14);
+  color: var(--bm-accent);
+  margin-bottom: 10px;
+}
+
+.bm-empty-icon svg { width: 20px; height: 20px; }
+
+.bm-empty-icon.danger {
+  background: rgba(224, 92, 92, 0.14);
+  color: var(--bm-danger, #e05c5c);
+}
+
+.bm-empty-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--bm-text);
+}
+
+.bm-empty-text {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--bm-text-muted);
+  max-width: 240px;
+}
+
+.bm-empty-retry {
+  margin-top: 14px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 8px;
+  color: var(--bm-text);
+  padding: 7px 16px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.bm-empty-retry:hover {
+  border-color: var(--bm-accent);
+}
+
+.bm-mini-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2.5px solid var(--bm-border);
+  border-top-color: var(--bm-accent);
+  animation: bm-mini-spin 0.7s linear infinite;
+  margin-bottom: 4px;
+}
+
+@keyframes bm-mini-spin {
+  to { transform: rotate(360deg); }
 }
 
 .memory-item {
@@ -185,39 +820,174 @@ header {
 
 .memory-item-delete:hover {
   background: var(--bm-surface-hover);
-  color: #e05a5a;
+  color: var(--bm-danger);
 }
 
-#summary-cta {
-  margin: 14px 16px 0;
-  padding: 14px;
-  background: var(--bm-surface);
-  border: 1px solid var(--bm-border);
-  border-radius: 10px;
+#home-view {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  padding: 26px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   text-align: center;
 }
 
-#summary-cta p {
-  margin: 0 0 10px;
+.home-greeting h2 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--bm-text);
+}
+
+.home-greeting p {
+  margin: 0 0 22px;
   color: var(--bm-text-muted);
   font-size: 12.5px;
+  line-height: 1.5;
+  max-width: 280px;
 }
 
-#summary-cta-btn {
-  background: var(--bm-accent);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  padding: 8px 16px;
-  font-size: 13px;
+.wave {
+  display: inline-block;
+  animation: bm-wave 2.2s ease-in-out infinite;
+  transform-origin: 70% 70%;
+}
+
+@keyframes bm-wave {
+  0%, 60%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-8deg); }
+  30% { transform: rotate(14deg); }
+  40% { transform: rotate(-4deg); }
+  50% { transform: rotate(10deg); }
+}
+
+.home-section-label {
+  width: 100%;
+  max-width: 320px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bm-text-muted);
+  margin: 0 0 8px;
+}
+
+.home-tools {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.home-tool {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: 10px;
+  padding: 14px;
   cursor: pointer;
+  text-align: left;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 }
 
-#summary-cta-btn:hover {
-  opacity: 0.9;
+.home-tool:hover {
+  transform: translateY(-1px);
+  border-color: rgba(108, 92, 231, 0.4);
+  background: var(--bm-surface-hover);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* The odd tile spanning the full row (e.g. a lone 5th item) reads as a
+   list row, not a stretched grid card - icon and label sit inline. */
+.home-tools .home-tool:last-child:nth-child(odd) {
+  grid-column: span 2;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+
+.home-tools .home-tool:last-child:nth-child(odd) .home-tool-icon {
+  margin-bottom: 0;
+}
+
+.home-tool-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.14);
+  color: var(--bm-accent);
+  flex-shrink: 0;
+}
+
+.home-tool-icon svg { width: 16px; height: 16px; }
+
+.home-tool-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bm-text);
+  line-height: 1.3;
+}
+
+.home-tip-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(108, 92, 231, 0.08);
+  border: 1px solid rgba(108, 92, 231, 0.22);
+  text-align: left;
+}
+
+.home-tip-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.16);
+  color: var(--bm-accent);
+}
+
+.home-tip-icon svg { width: 15px; height: 15px; }
+
+.home-tip-body h4 {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--bm-text);
+}
+
+.home-tip-body p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--bm-text-muted);
 }
 
 #chat-log {
+  position: relative;
+  z-index: 1;
   flex: 1;
   overflow-y: auto;
   padding: 14px 16px;
@@ -255,6 +1025,8 @@ header {
 }
 
 footer {
+  position: relative;
+  z-index: 1;
   display: flex;
   gap: 8px;
   padding: 12px;
@@ -264,17 +1036,28 @@ footer {
 
 #chat-input {
   flex: 1;
-  background: var(--bm-bg);
   border: 1px solid var(--bm-border);
   border-radius: 8px;
   color: var(--bm-text);
   padding: 9px 12px;
   font-size: 13.5px;
+  background-image: linear-gradient(var(--bm-bg), var(--bm-bg));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
 }
 
 #chat-input:focus {
   outline: none;
-  border-color: var(--bm-accent);
+  border-color: transparent;
+  background-image:
+    linear-gradient(var(--bm-bg), var(--bm-bg)),
+    linear-gradient(90deg, var(--bm-accent), #3fa9f5, #9b5cf6, var(--bm-accent));
+  background-size: 100% 100%, 300% 100%;
+  animation: bm-input-border 3s linear infinite;
+}
+
+@keyframes bm-input-border {
+  to { background-position: 0 0, -300% 0; }
 }
 
 #send-btn {
@@ -309,6 +1092,12 @@ footer {
   border-radius: 14px;
   max-width: 88%;
   transition: background-color 0.2s ease, border-color 0.2s ease;
+  animation: bm-msg-in 0.25s ease-out;
+}
+
+@keyframes bm-msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .msg-user {
@@ -325,13 +1114,55 @@ footer {
   border-bottom-left-radius: 4px;
 }
 
-.msg-loading {
-  font-style: italic;
-  color: var(--bm-text-muted);
-  animation: bm-pulse 1.2s ease-in-out infinite;
+.thinking-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
 }
 
-@keyframes bm-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.9; }
+.thinking-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bm-text-muted);
+  animation: bm-dot-bounce 1.1s ease-in-out infinite;
+}
+
+.thinking-dots span:nth-child(2) { animation-delay: 0.15s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes bm-dot-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* Keyboard accessibility: a visible focus ring on every interactive
+   element, matching the same rule used on every standalone tool page. */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--bm-accent);
+  outline-offset: 2px;
+}
+
+/* Thin scrollbars matching the tool pages, instead of the browser default
+   looking out of place against these custom-styled panels. */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bm-border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bm-surface-hover);
 }

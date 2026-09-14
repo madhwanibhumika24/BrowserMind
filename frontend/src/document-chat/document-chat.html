@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BrowserMind Document Chat</title>
+  <link rel="stylesheet" href="../shared/tokens.css" />
+  <link rel="stylesheet" href="../shared/components.css" />
+  <link rel="stylesheet" href="document-chat.css" />
+</head>
+<body>
+  <div class="bg-dots"></div>
+  <div id="doc-app" class="page-shell">
+    <header>
+      <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
+      <div class="tools-heading">
+        <span class="hero-tag">✨ Ask anything about your file</span>
+        <h1>Chat with <span class="text-gradient">Document</span></h1>
+        <p class="tools-subtitle">Upload a PDF, Word, or PowerPoint file and ask questions - BrowserMind answers using only what's in it.</p>
+      </div>
+    </header>
+
+    <div id="upload-view" class="tool-card">
+      <label for="doc-file-input">Upload a document</label>
+      <label id="doc-dropzone" for="doc-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="doc-dropzone-text">Click to upload</span>
+        <span class="dropzone-hint">Supports PDF, Word (.docx), and PowerPoint (.pptx)</span>
+      </label>
+      <input id="doc-file-input" type="file" accept=".pdf,.docx,.pptx" class="hidden" />
+
+      <button id="upload-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Start chatting
+      </button>
+      <p id="upload-error" class="tool-error hidden"></p>
+    </div>
+
+    <div id="chat-view" class="tool-card hidden">
+      <div class="doc-chat-header">
+        <span class="doc-filename" id="doc-filename"></span>
+        <button id="change-doc-btn" class="back-link">Change document</button>
+      </div>
+      <div id="chat-log"></div>
+      <div class="chat-input-row">
+        <input id="chat-input" type="text" placeholder="Ask a question about this document..." />
+        <button id="send-btn" title="Send">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 20l18-8L3 4v6l12 2-12 2z"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="document-chat.js"></script>
+</body>
+</html>

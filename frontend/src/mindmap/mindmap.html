@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BrowserMind Mindmap</title>
+  <link rel="stylesheet" href="../shared/tokens.css" />
+  <link rel="stylesheet" href="../shared/components.css" />
+  <link rel="stylesheet" href="mindmap.css" />
+</head>
+<body>
+  <div class="bg-dots"></div>
+  <div id="tools-app" class="page-shell">
+    <header>
+      <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
+      <div class="tools-heading">
+        <span class="hero-tag">✨ No sign-in needed</span>
+        <h1>Mindmap <span class="text-gradient">Generator</span></h1>
+        <p class="tools-subtitle">Describe a topic and get it broken down into a visual tree of ideas.</p>
+      </div>
+    </header>
+
+    <div id="input-card" class="tool-card">
+      <label for="topic-input">Topic</label>
+      <input id="topic-input" type="text" placeholder="e.g. Photosynthesis, Object-Oriented Programming, Marketing 101" />
+
+      <button id="generate-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Generate mindmap
+      </button>
+      <p id="generate-error" class="tool-error hidden"></p>
+    </div>
+
+    <div id="result-card" class="tool-card hidden">
+      <button id="back-btn" class="back-link">← New topic</button>
+      <div id="mindmap-tree"></div>
+    </div>
+  </div>
+  <script type="module" src="mindmap.js"></script>
+</body>
+</html>

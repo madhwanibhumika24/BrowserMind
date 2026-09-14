@@ -5,3 +5,22 @@ pydantic-settings==2.6.0
 langchain-google-genai==2.0.7
 python-dotenv==1.0.1
 httpx==0.27.2
+SQLAlchemy==2.0.35
+PyMySQL==1.1.1
+cryptography==43.0.1
+python-multipart==0.0.12
+pypdf==5.1.0
+python-docx==1.1.2
+python-pptx==1.0.2
+pytesseract==0.3.13
+Pillow==10.4.0
+# Left unpinned on purpose (every other line above is pinned exact) - an
+# older pinned chromadb version dragged in chroma-hnswlib==0.7.6, which had
+# no prebuilt Windows/cp312 wheel and tried to compile from source, needing
+# a C++ compiler this project shouldn't require. Letting pip resolve the
+# latest chromadb gives it the best chance of picking a chroma-hnswlib
+# release that does ship a matching wheel. If `pip install` still tries to
+# build chroma-hnswlib from source, that means no matching wheel exists yet
+# for this Python/OS combo, and installing "Desktop development with C++"
+# from the Visual Studio Build Tools installer is the only way around it.
+chromadb

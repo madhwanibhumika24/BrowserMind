@@ -6,19 +6,17 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log("BrowserMind installed.");
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  if (!tab.id) return;
-
-  // Try toggling first - if content.js is already injected on this tab
-  // (e.g. the icon was clicked before), this just works.
-  chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_SIDEBAR" }, () => {
+// Shared by the toolbar-icon click and the keyboard shortcut below: try
+// messaging content.js directly, and if it's not injected on this tab yet
+// (chrome.runtime.lastError), inject it using activeTab permission - both
+// an action click and a commands shortcut count as the user gesture that
+// grants activeTab, so this works the same way either way.
+function sendToTab(tabId, message) {
+  chrome.tabs.sendMessage(tabId, message, () => {
     if (chrome.runtime.lastError) {
-      // Not injected yet on this tab/page - inject now using activeTab
-      // permission (granted because the user just clicked the icon),
-      // then open the sidebar.
       chrome.scripting.executeScript(
         {
-          target: { tabId: tab.id },
+          target: { tabId },
           files: ["src/content/content.js", "src/content/selection-toolbar.js"],
         },
         () => {
@@ -26,10 +24,26 @@ chrome.action.onClicked.addListener((tab) => {
             console.log("BrowserMind: could not run on this page.", chrome.runtime.lastError.message);
             return;
           }
-          chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_SIDEBAR" });
+          chrome.tabs.sendMessage(tabId, message);
         }
       );
     }
+  });
+}
+
+chrome.action.onClicked.addListener((tab) => {
+  if (!tab.id) return;
+  sendToTab(tab.id, { type: "TOGGLE_SIDEBAR" });
+});
+
+// Ctrl+Shift+K (see manifest.json "commands") - opens the sidebar (if not
+// already open) and focuses the chat input, for a quick question without
+// reaching for the mouse.
+chrome.commands.onCommand.addListener((command) => {
+  if (command !== "quick-ask") return;
+  chrome.tabs.query({ active: true, currentWindow: true }, ([tab]) => {
+    if (!tab?.id) return;
+    sendToTab(tab.id, { type: "OPEN_QUICK_ASK" });
   });
 });
 

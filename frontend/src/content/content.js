@@ -20,17 +20,20 @@ if (!window.browsermindLoaded) {
     resizeHandle.style.left = `${window.innerWidth - MARGIN - currentWidth - 3}px`;
   }
 
-  function sendQueryToSidebar(query) {
-    sidebarFrame.contentWindow.postMessage({ type: "BROWSERMIND_QUICK_ASK", query }, "*");
+  function sendQueryToSidebar(query, label) {
+    sidebarFrame.contentWindow.postMessage(
+      { type: "BROWSERMIND_QUICK_ASK", query, label },
+      "*"
+    );
   }
 
-  function openSidebar(initialQuery) {
+  function openSidebar(initialQuery, initialLabel) {
     sidebarFrame = document.createElement("iframe");
     sidebarFrame.id = "browsermind-sidebar";
     sidebarFrame.src = chrome.runtime.getURL("src/sidebar/sidebar.html");
 
     if (initialQuery) {
-      sidebarFrame.addEventListener("load", () => sendQueryToSidebar(initialQuery));
+      sidebarFrame.addEventListener("load", () => sendQueryToSidebar(initialQuery, initialLabel));
     }
 
     Object.assign(sidebarFrame.style, {
@@ -112,30 +115,59 @@ if (!window.browsermindLoaded) {
     if (sidebarFrame) sidebarFrame.style.pointerEvents = "auto";
   });
 
+  function focusChatInput() {
+    sidebarFrame.contentWindow.postMessage({ type: "BROWSERMIND_FOCUS_INPUT" }, "*");
+  }
+
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === "TOGGLE_SIDEBAR") toggleSidebar();
     if (message.type === "GET_PAGE_EXCERPT") return getPageExcerpt();
+    if (message.type === "OPEN_QUICK_ASK") {
+      if (sidebarFrame) {
+        focusChatInput();
+      } else {
+        openSidebar();
+        sidebarFrame.addEventListener("load", focusChatInput, { once: true });
+      }
+    }
   });
 
   window.addEventListener("message", (event) => {
     if (event.data?.type === "BROWSERMIND_CLOSE") closeSidebar();
   });
 
+  // `query` is the full prompt sent to the backend (includes the selected
+  // text, for context). `label` is the short bubble shown in the chat, so
+  // the whole selected paragraph doesn't get echoed back at the user.
   const QUICK_ASK_PROMPTS = {
     explain: (text) => `Explain this: "${text}"`,
     summarize: (text) => `Summarize this: "${text}"`,
     simplify: (text) => `Rewrite this in simple, plain terms: "${text}"`,
     define: (text) => `Define this term/concept: "${text}"`,
+    grammar: (text) =>
+      `Fix the grammar, spelling, and punctuation of this text, keeping its meaning and tone. Reply with ONLY the corrected text, no explanation: "${text}"`,
+    translate: (text) =>
+      `Translate this text to English. Reply with ONLY the translation, no explanation: "${text}"`,
+  };
+
+  const QUICK_ASK_LABELS = {
+    explain: "Explain selected text",
+    summarize: "Summarize selected text",
+    simplify: "Simplify selected text",
+    define: "Define selected text",
+    grammar: "Fix grammar",
+    translate: "Translate to English",
   };
 
   document.addEventListener("browsermind:quick-ask", (e) => {
     const { text, action } = e.detail;
     const query = QUICK_ASK_PROMPTS[action](text);
+    const label = QUICK_ASK_LABELS[action];
 
     if (sidebarFrame) {
-      sendQueryToSidebar(query);
+      sendQueryToSidebar(query, label);
     } else {
-      openSidebar(query);
+      openSidebar(query, label);
     }
   });
 

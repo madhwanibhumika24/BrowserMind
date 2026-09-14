@@ -47,13 +47,33 @@
     padding: 0 56px;
   }
 
+  .overline {
+    display: block;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--accent-2);
+    margin: 0 0 12px;
+  }
+
   /* Nav */
-  nav {
+  .site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 12, 16, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 26px 0;
-    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
   }
 
   .brand {
@@ -79,7 +99,7 @@
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 40px;
+    gap: 34px;
     font-size: 15px;
     color: var(--text-muted);
   }
@@ -87,20 +107,67 @@
   .nav-links a { text-decoration: none; }
   .nav-links a:hover { color: var(--text); }
 
+  .gh-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-size: 13.5px;
+    font-weight: 600;
+    text-decoration: none;
+    color: var(--text);
+    transition: border-color 0.2s, background 0.2s, transform 0.2s;
+  }
+
+  .gh-badge:hover {
+    border-color: rgba(63, 169, 245, 0.5);
+    background: var(--surface-2);
+    transform: translateY(-1px);
+  }
+
+  .gh-badge svg { width: 15px; height: 15px; }
+
   /* Hero */
   .hero {
     text-align: center;
-    padding: 130px 0 110px;
+    padding: 120px 0 100px;
+  }
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 16px;
+    margin-bottom: 30px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    animation: bm-fade-up 0.7s ease-out 0s forwards;
+  }
+
+  .hero-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 8px rgba(63, 169, 245, 0.8);
   }
 
   .hero-icon {
-    width: 100px;
-    height: 100px;
+    width: 96px;
+    height: 96px;
     border-radius: 50%;
-    margin-bottom: 34px;
+    margin-bottom: 30px;
     box-shadow: 0 10px 40px rgba(108, 92, 231, 0.35);
     opacity: 0;
-    animation: bm-fade-up 0.7s ease-out 0s forwards;
+    animation: bm-fade-up 0.7s ease-out 0.1s forwards;
   }
 
   .hero h1 {
@@ -165,6 +232,7 @@
     text-decoration: none;
     cursor: pointer;
     border: 1px solid transparent;
+    transition: transform 0.2s ease, opacity 0.2s ease, background 0.2s ease;
   }
 
   .btn-primary {
@@ -172,7 +240,7 @@
     color: #0b0c10;
   }
 
-  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
 
   .btn-secondary {
     background: transparent;
@@ -180,7 +248,206 @@
     color: var(--text);
   }
 
-  .btn-secondary:hover { background: var(--surface-2); }
+  .btn-secondary:hover { background: var(--surface-2); transform: translateY(-1px); }
+
+  .tech-strip {
+    margin-top: 56px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    opacity: 0;
+    animation: bm-fade-up 0.7s ease-out 0.9s forwards;
+  }
+
+  .tech-pill {
+    font-size: 12.5px;
+    color: var(--text-muted);
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  .mockup-card {
+    max-width: 480px;
+    margin: 56px auto 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+    text-align: left;
+  }
+
+  .mockup-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+
+  .mockup-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .mockup-title {
+    margin-left: 8px;
+    font-size: 12.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .mockup-body {
+    padding: 20px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .mockup-msg {
+    max-width: 80%;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .mockup-msg-user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  .mockup-msg-bot {
+    align-self: flex-start;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  .mockup-input {
+    margin: 4px 18px 18px;
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-muted);
+    font-size: 12.5px;
+    background: var(--bg);
+  }
+
+  /* FAQ */
+  .faq-list {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .faq-item {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+
+  .faq-item summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 15px;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .faq-item summary::-webkit-details-marker { display: none; }
+
+  .faq-item summary::after {
+    content: "+";
+    font-size: 20px;
+    color: var(--accent-2);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    margin-left: 16px;
+  }
+
+  .faq-item[open] summary::after { transform: rotate(45deg); }
+
+  .faq-item p {
+    margin: 12px 0 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    line-height: 1.6;
+  }
+
+  /* Closing CTA */
+  .cta-band {
+    text-align: center;
+    padding: 64px 40px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, rgba(108, 92, 231, 0.16), rgba(63, 169, 245, 0.12));
+    border: 1px solid var(--border);
+    margin: 20px 0 60px;
+  }
+
+  .cta-band h2 {
+    margin: 0 0 10px;
+    font-size: 30px;
+  }
+
+  .cta-band p {
+    margin: 0 0 26px;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+
+  .cta-band .btn {
+    display: inline-flex;
+  }
+
+  /* How it works */
+  .flow {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-top: 8px;
+  }
+
+  .flow-step {
+    text-align: center;
+    padding: 0 16px;
+  }
+
+  .flow-num {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    box-shadow: 0 8px 24px rgba(108, 92, 231, 0.35);
+  }
+
+  .flow-step h3 {
+    font-size: 16.5px;
+    margin: 0 0 8px;
+  }
+
+  .flow-step p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    margin: 0 auto;
+    max-width: 280px;
+  }
 
   /* Features */
   .section {
@@ -214,18 +481,38 @@
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 28px 24px;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(108, 92, 231, 0.4);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   }
 
   .feature-card .icon {
     width: 38px;
     height: 38px;
     border-radius: 10px;
-    background: var(--surface-2);
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 14px;
+  }
+
+  .feature-card:nth-child(1) .icon, .feature-card:nth-child(4) .icon {
     color: var(--accent);
+    background: rgba(108, 92, 231, 0.14);
+  }
+
+  .feature-card:nth-child(2) .icon, .feature-card:nth-child(5) .icon {
+    color: var(--accent-2);
+    background: rgba(63, 169, 245, 0.14);
+  }
+
+  .feature-card:nth-child(3) .icon, .feature-card:nth-child(6) .icon {
+    color: var(--accent-3);
+    background: rgba(155, 92, 231, 0.14);
   }
 
   .feature-card .icon svg { width: 20px; height: 20px; }
@@ -291,16 +578,64 @@
     font-size: 12.5px;
   }
 
+  /* Scroll reveal */
+  .reveal-on-scroll {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .reveal-on-scroll.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   /* Footer */
   footer {
-    padding: 32px 0;
+    padding: 56px 0 28px;
     border-top: 1px solid var(--border);
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+
+  .footer-brand p {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: 13.5px;
+    max-width: 320px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 26px;
+    font-size: 14px;
+  }
+
+  .footer-links a {
+    text-decoration: none;
+    color: var(--text-muted);
+  }
+
+  .footer-links a:hover { color: var(--text); }
+
+  .footer-credit {
     text-align: center;
     color: var(--text-muted);
     font-size: 13px;
   }
 
-  footer a { text-decoration: underline; }
+  @media (max-width: 900px) {
+    .flow { grid-template-columns: 1fr; gap: 32px; }
+  }
 
   @media (max-width: 720px) {
     .wrap { padding: 0 24px; }
@@ -309,13 +644,16 @@
     .features { grid-template-columns: 1fr; }
     .hero h1 { font-size: 34px; }
     .section h2 { font-size: 28px; }
+    .nav-links { gap: 18px; font-size: 14px; }
+    .gh-badge span.gh-label { display: none; }
+    .footer-inner { flex-direction: column; }
   }
 </style>
 </head>
 <body>
 
-<div class="wrap">
-  <nav>
+<header class="site-nav">
+  <div class="wrap nav-inner">
     <div class="brand">
       <img src="../frontend/public/icons/icon128.png" alt="BrowserMind" />
       <span class="brand-name">BrowserMind</span>
@@ -323,13 +661,18 @@
     <div class="nav-links">
       <a href="#features">Features</a>
       <a href="#install">Install</a>
-      <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">GitHub</a>
+      <a href="#faq">FAQ</a>
+      <a class="gh-badge" href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span class="gh-label">View Source</span>
+      </a>
     </div>
-  </nav>
-</div>
+  </div>
+</header>
 
 <div class="wrap">
   <section class="hero">
+    <div class="hero-badge"><span class="dot"></span>Chrome Extension · FastAPI · Google Gemini</div>
     <img class="hero-icon" src="../frontend/public/icons/icon128.png" alt="" />
     <h1><span class="letter" style="animation-delay:0.00s">Y</span><span class="letter" style="animation-delay:0.09s">o</span><span class="letter" style="animation-delay:0.18s">u</span><span class="letter" style="animation-delay:0.27s">r</span> <span class="letter accent-text" style="animation-delay:0.36s; background-position-x:0%">A</span><span class="letter accent-text" style="animation-delay:0.45s; background-position-x:10%">I</span><span class="letter accent-text" style="animation-delay:0.54s; background-position-x:20%">-</span><span class="letter accent-text" style="animation-delay:0.63s; background-position-x:30%">p</span><span class="letter accent-text" style="animation-delay:0.72s; background-position-x:40%">o</span><span class="letter accent-text" style="animation-delay:0.81s; background-position-x:50%">w</span><span class="letter accent-text" style="animation-delay:0.90s; background-position-x:60%">e</span><span class="letter accent-text" style="animation-delay:0.99s; background-position-x:70%">r</span><span class="letter accent-text" style="animation-delay:1.08s; background-position-x:80%">e</span><span class="letter accent-text" style="animation-delay:1.17s; background-position-x:90%">d</span><br />
       <span class="letter" style="animation-delay:1.26s">b</span><span class="letter" style="animation-delay:1.35s">r</span><span class="letter" style="animation-delay:1.44s">o</span><span class="letter" style="animation-delay:1.53s">w</span><span class="letter" style="animation-delay:1.62s">s</span><span class="letter" style="animation-delay:1.71s">i</span><span class="letter" style="animation-delay:1.80s">n</span><span class="letter" style="animation-delay:1.89s">g</span> <span class="letter" style="animation-delay:1.98s">a</span><span class="letter" style="animation-delay:2.07s">s</span><span class="letter" style="animation-delay:2.16s">s</span><span class="letter" style="animation-delay:2.25s">i</span><span class="letter" style="animation-delay:2.34s">s</span><span class="letter" style="animation-delay:2.43s">t</span><span class="letter" style="animation-delay:2.52s">a</span><span class="letter" style="animation-delay:2.61s">n</span><span class="letter" style="animation-delay:2.70s">t</span>
@@ -348,50 +691,98 @@
         View on GitHub
       </a>
     </div>
+    <div class="tech-strip">
+      <span class="tech-pill">Manifest V3</span>
+      <span class="tech-pill">FastAPI</span>
+      <span class="tech-pill">Google Gemini</span>
+      <span class="tech-pill">MySQL + SQLAlchemy</span>
+      <span class="tech-pill">RAG Memory</span>
+    </div>
+    <div class="mockup-card reveal-on-scroll">
+      <div class="mockup-header">
+        <span class="mockup-dot" style="background:#ff5f57;"></span>
+        <span class="mockup-dot" style="background:#febc2e;"></span>
+        <span class="mockup-dot" style="background:#28c840;"></span>
+        <span class="mockup-title">BrowserMind</span>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-msg mockup-msg-user">Summarize this page for me</div>
+        <div class="mockup-msg mockup-msg-bot">This article covers three main points — want me to turn it into a quiz too?</div>
+        <div class="mockup-msg mockup-msg-user">Yes, quiz me</div>
+        <div class="mockup-msg mockup-msg-bot">Generating a 5-question quiz based on this page ✓</div>
+      </div>
+      <div class="mockup-input">Ask BrowserMind...</div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="section how-it-works">
+    <span class="overline">How it works</span>
+    <h2 style="text-align:center;">From a highlighted sentence to an answer</h2>
+    <p class="sub">No extra setup once it's running — it just plugs into how you already browse.</p>
+    <div class="flow">
+      <div class="flow-step reveal-on-scroll">
+        <div class="flow-num">1</div>
+        <h3>Ask or select</h3>
+        <p>Chat directly in the sidebar, or select any text on a page and pick a quick action.</p>
+      </div>
+      <div class="flow-step reveal-on-scroll">
+        <div class="flow-num">2</div>
+        <h3>Agent responds</h3>
+        <p>Open tabs give context, the right specialist agent replies — and always asks before it acts.</p>
+      </div>
+      <div class="flow-step reveal-on-scroll">
+        <div class="flow-num">3</div>
+        <h3>It remembers</h3>
+        <p>Key details are saved to memory, so BrowserMind gets more useful the more you use it.</p>
+      </div>
+    </div>
   </section>
 </div>
 
 <div class="wrap" id="features">
   <section class="section">
+    <span class="overline">Features</span>
     <h2>What it does</h2>
     <p class="sub">Six modules working together, all inside one sidebar.</p>
     <div class="features">
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"/><rect x="14" y="5" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         </div>
         <h3>Tab Intelligence & Agents</h3>
         <p>Reads your open tabs and routes chat to specialized agents for coding, research, learning, or career questions.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>
         </div>
         <h3>Quick Actions Toolbar</h3>
         <p>Select any text on any page to Explain, Summarize, Simplify, Define, or turn it into a quiz — instantly.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg>
         </div>
         <h3>Quiz Generator</h3>
         <p>Turns whatever you're reading into a short AI-generated quiz on its own page — great for studying.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
         </div>
         <h3>Memory & Personalization</h3>
         <p>Remembers past interactions via a RAG-style memory store, with a panel to view or forget anything, anytime.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>
         </div>
         <h3>Secure Sign-In</h3>
         <p>Google sign-in keeps your chats and memory tied to your account, backed by a real MySQL database.</p>
       </div>
-      <div class="feature-card">
+      <div class="feature-card reveal-on-scroll">
         <div class="icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M5 11l7-7 7 7"/></svg>
         </div>
@@ -404,31 +795,32 @@
 
 <div class="wrap" id="install">
   <section class="section">
+    <span class="overline">Get started</span>
     <h2>Install it</h2>
     <p class="sub">Not on the Chrome Web Store yet — here's how to run it locally.</p>
     <div class="steps">
-      <div class="step">
+      <div class="step reveal-on-scroll">
         <div class="step-num">1</div>
         <div class="step-body">
           <h4>Clone the repo</h4>
           <p><code>git clone https://github.com/madhwanibhumika24/BrowserMind.git</code></p>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal-on-scroll">
         <div class="step-num">2</div>
         <div class="step-body">
           <h4>Start the backend</h4>
           <p>Follow <code>backend/README.md</code> to set up the virtual environment, install dependencies, and run the FastAPI server.</p>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal-on-scroll">
         <div class="step-num">3</div>
         <div class="step-body">
           <h4>Load the extension</h4>
           <p>Open <code>chrome://extensions</code>, enable Developer mode, click "Load unpacked", and select the <code>frontend</code> folder.</p>
         </div>
       </div>
-      <div class="step">
+      <div class="step reveal-on-scroll">
         <div class="step-num">4</div>
         <div class="step-body">
           <h4>Sign in and go</h4>
@@ -439,10 +831,73 @@
   </section>
 </div>
 
+<div class="wrap" id="faq">
+  <section class="section">
+    <span class="overline">FAQ</span>
+    <h2>Frequently asked questions</h2>
+    <div class="faq-list">
+      <details class="faq-item reveal-on-scroll">
+        <summary>Do I need to pay for anything?</summary>
+        <p>No. BrowserMind is a free, open-source college project — clone it, run your own backend, and use it with your own Gemini API key.</p>
+      </details>
+      <details class="faq-item reveal-on-scroll">
+        <summary>Which AI model does it use?</summary>
+        <p>Google Gemini, through a FastAPI backend that routes your question to a specialist agent for coding, research, learning, or career questions.</p>
+      </details>
+      <details class="faq-item reveal-on-scroll">
+        <summary>Do I need a Google account?</summary>
+        <p>Yes — sign-in is handled entirely through Google, so there's no separate password to create or remember.</p>
+      </details>
+      <details class="faq-item reveal-on-scroll">
+        <summary>Is my data safe?</summary>
+        <p>Your chats and memory are stored in your own local MySQL database when you run the backend yourself — nothing goes to a third-party server beyond Google Sign-In and the Gemini API.</p>
+      </details>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section class="cta-band reveal-on-scroll">
+    <h2>Ready to browse smarter?</h2>
+    <p>Get BrowserMind running locally in just a few minutes.</p>
+    <a class="btn btn-primary" href="#install">Install extension</a>
+  </section>
+</div>
+
 <footer>
-  Built by Bhumika Madhwani &amp; Swaroop More ·
-  <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">Source on GitHub</a>
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <span class="brand-name">BrowserMind</span>
+      <p>An AI-powered Chrome extension that understands your open tabs, remembers what matters, and always asks before it acts.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#features">Features</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </div>
+  <div class="wrap footer-credit">
+    Built by Bhumika Madhwani &amp; Swaroop More ·
+    <a href="https://github.com/madhwanibhumika24/BrowserMind" target="_blank" rel="noopener" style="text-decoration:underline;">Source on GitHub</a>
+  </div>
 </footer>
+
+<script>
+  var revealEls = document.querySelectorAll('.reveal-on-scroll');
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          io.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    revealEls.forEach(function (el) { io.observe(el); });
+  } else {
+    revealEls.forEach(function (el) { el.classList.add('is-visible'); });
+  }
+</script>
 
 </body>
 </html>

@@ -3,15 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <title>BrowserMind Quiz</title>
+  <link rel="stylesheet" href="../shared/tokens.css" />
+  <link rel="stylesheet" href="../shared/components.css" />
   <link rel="stylesheet" href="quiz.css" />
 </head>
 <body>
-  <div id="quiz-app">
+  <div class="bg-dots"></div>
+  <div id="quiz-app" class="page-shell">
     <header>
-      <span class="logo">BrowserMind Quiz</span>
+      <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
+      <div class="tools-heading">
+        <span class="hero-tag">✨ Powered by Google Gemini</span>
+        <h1>Quiz yourself on <span class="text-gradient">this page</span></h1>
+        <p class="tools-subtitle">AI-generated questions from what you're reading right now.</p>
+      </div>
     </header>
-    <main id="quiz-content">
-      <p>Generating quiz...</p>
+    <main id="quiz-content" class="tool-card">
+      <div class="quiz-loading">
+        <span class="bm-spinner"></span>
+        <p>Reading the page and writing your quiz...</p>
+      </div>
     </main>
   </div>
   <script type="module" src="quiz.js"></script>

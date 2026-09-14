@@ -1,0 +1,88 @@
+/* PDF Tools - page-specific rules only. Shared tokens, page shell, header,
+   tool-card, mode-tabs, dropzone, buttons, and focus rings all come from
+   ../shared/tokens.css + ../shared/components.css (linked in the HTML
+   before this file). */
+
+#tools-app { max-width: 560px; }
+
+.pages-hint {
+  margin: 6px 0 0;
+  text-transform: none;
+  font-weight: 400;
+}
+
+#merge-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.merge-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.merge-file-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.merge-file-remove {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.merge-file-remove:hover { color: var(--bm-danger); }
+
+#split-pages {
+  width: 100%;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-md);
+  color: var(--bm-text);
+  padding: 11px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 4px;
+}
+
+#split-pages:focus {
+  outline: none;
+  border-color: var(--bm-accent);
+}
+
+.ocr-note {
+  margin-top: 10px;
+}
+
+#ocr-result {
+  margin-top: 16px;
+}
+
+#ocr-text {
+  width: 100%;
+  resize: vertical;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-md);
+  color: var(--bm-text);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
