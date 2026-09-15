@@ -1,4 +1,4 @@
-"""Stateless PDF utilities - merge and split.
+"""Stateless PDF utilities - merge, split, protect, watermark, compress.
 
 No sign-in required and nothing is stored server-side: a file comes in,
 a file goes straight back out. Registered outside the signed_in router
@@ -10,6 +10,8 @@ import io
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pypdf import PdfReader, PdfWriter
+from reportlab.lib.colors import Color
+from reportlab.pdfgen import canvas
 
 router = APIRouter(prefix="/pdf-tools", tags=["pdf-tools"])
 
@@ -104,3 +106,83 @@ async def split_pdf(file: UploadFile = File(...), pages: str = Form(...)) -> Str
         writer.add_page(reader.pages[i])
 
     return _pdf_response(writer, "split.pdf")
+
+
+@router.post("/protect")
+async def protect_pdf(file: UploadFile = File(...), password: str = Form(...)) -> StreamingResponse:
+    if not password:
+        raise HTTPException(status_code=400, detail="Enter a password")
+
+    content = await file.read()
+    reader = _read_pdf(file.filename, content)
+
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.encrypt(password)
+
+    return _pdf_response(writer, "protected.pdf")
+
+
+def _watermark_overlay(text: str, width: float, height: float) -> PdfReader:
+    """A single-page PDF the same size as the target page, with the
+    watermark text drawn diagonally across it in translucent gray - merged
+    onto every page of the real PDF below."""
+    buffer = io.BytesIO()
+    c = canvas.Canvas(buffer, pagesize=(width, height))
+    c.saveState()
+    c.setFillColor(Color(0, 0, 0, alpha=0.15))
+    c.setFont("Helvetica-Bold", max(24, int(min(width, height) / 10)))
+    c.translate(width / 2, height / 2)
+    c.rotate(45)
+    c.drawCentredString(0, 0, text)
+    c.restoreState()
+    c.save()
+    buffer.seek(0)
+    return PdfReader(buffer)
+
+
+@router.post("/watermark")
+async def watermark_pdf(file: UploadFile = File(...), text: str = Form(...)) -> StreamingResponse:
+    text = text.strip()
+    if not text:
+        raise HTTPException(status_code=400, detail="Enter watermark text")
+
+    content = await file.read()
+    reader = _read_pdf(file.filename, content)
+
+    writer = PdfWriter()
+    for page in reader.pages:
+        box = page.mediabox
+        overlay = _watermark_overlay(text, float(box.width), float(box.height))
+        page.merge_page(overlay.pages[0])
+        writer.add_page(page)
+
+    return _pdf_response(writer, "watermarked.pdf")
+
+
+_COMPRESS_JPEG_QUALITY = {"low": 30, "medium": 55, "high": 75}
+
+
+@router.post("/compress")
+async def compress_pdf(file: UploadFile = File(...), quality: str = Form("medium")) -> StreamingResponse:
+    jpeg_quality = _COMPRESS_JPEG_QUALITY.get(quality, 55)
+
+    content = await file.read()
+    reader = _read_pdf(file.filename, content)
+
+    writer = PdfWriter()
+    for page in reader.pages:
+        # Recompressing embedded images is where the real size savings come
+        # from for photo/scan-heavy PDFs - text-only PDFs won't shrink much,
+        # which compress_content_streams() below covers instead.
+        for image in page.images:
+            try:
+                image.replace(image.image, quality=jpeg_quality)
+            except Exception:
+                pass  # unsupported image format for this page - leave as-is
+        writer.add_page(page)
+
+    writer.compress_content_streams()
+
+    return _pdf_response(writer, "compressed.pdf")

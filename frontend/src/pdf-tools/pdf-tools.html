@@ -13,16 +13,36 @@
     <header>
       <img class="tools-logo" src="../../public/icons/icon48.png" alt="" />
       <div class="tools-heading">
-        <span class="hero-tag">✨ No sign-in needed</span>
         <h1>PDF & Image <span class="text-gradient">Tools</span></h1>
-        <p class="tools-subtitle">Merge, split, or extract text from files right in your browser - nothing is tied to any account.</p>
+        <p class="tools-subtitle">Merge, split, protect, watermark, compress, or extract text - right in your browser, nothing tied to any account.</p>
       </div>
     </header>
 
     <div class="mode-tabs">
-      <button class="mode-tab active" data-mode="merge">Merge PDF</button>
-      <button class="mode-tab" data-mode="split">Split PDF</button>
-      <button class="mode-tab" data-mode="ocr">Image to Text</button>
+      <button class="mode-tab active" data-mode="merge">
+        <span class="mode-tab-icon" style="background:rgba(108,92,231,0.16); color:#a78bfa;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h2"/><path d="M16 3h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-2"/><path d="M12 8v8"/><path d="M9 11l3-3 3 3"/></svg></span>
+        <span class="mode-tab-label">Merge PDF</span>
+      </button>
+      <button class="mode-tab" data-mode="split">
+        <span class="mode-tab-icon" style="background:rgba(63,169,245,0.16); color:#7dd3fc;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="8" height="18" rx="1.5"/><rect x="13" y="3" width="8" height="18" rx="1.5"/></svg></span>
+        <span class="mode-tab-label">Split PDF</span>
+      </button>
+      <button class="mode-tab" data-mode="protect">
+        <span class="mode-tab-icon" style="background:rgba(62,207,142,0.16); color:#6ee7b7;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span class="mode-tab-label">Protect PDF</span>
+      </button>
+      <button class="mode-tab" data-mode="watermark">
+        <span class="mode-tab-icon" style="background:rgba(224,150,92,0.16); color:#fbbf24;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg></span>
+        <span class="mode-tab-label">Watermark PDF</span>
+      </button>
+      <button class="mode-tab" data-mode="compress">
+        <span class="mode-tab-icon" style="background:rgba(45,212,191,0.16); color:#5eead4;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg></span>
+        <span class="mode-tab-label">Compress PDF</span>
+      </button>
+      <button class="mode-tab" data-mode="ocr">
+        <span class="mode-tab-icon" style="background:rgba(236,72,153,0.16); color:#f9a8d4;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></span>
+        <span class="mode-tab-label">Image to Text</span>
+      </button>
     </div>
 
     <div id="merge-panel" class="tool-card">
@@ -54,7 +74,7 @@
       <input id="split-file-input" type="file" accept=".pdf" class="hidden" />
 
       <label for="split-pages" class="pages-label">Pages to extract</label>
-      <input id="split-pages" type="text" placeholder="e.g. 1-3, 5, 8-9" />
+      <input id="split-pages" type="text" class="tool-text-input" placeholder="e.g. 1-3, 5, 8-9" />
       <p class="dropzone-hint pages-hint">Comma-separated page numbers or ranges (1-indexed)</p>
 
       <button id="split-btn" class="primary-btn">
@@ -63,6 +83,73 @@
       </button>
       <p id="split-error" class="tool-error hidden"></p>
       <a id="split-download" class="download-btn hidden" download="split.pdf">Download split.pdf</a>
+    </div>
+
+    <div id="protect-panel" class="tool-card hidden">
+      <label for="protect-file-input">Upload a PDF to protect</label>
+      <label id="protect-dropzone" for="protect-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="protect-dropzone-text">Click to choose a PDF</span>
+        <span class="dropzone-hint">Supports PDF only</span>
+      </label>
+      <input id="protect-file-input" type="file" accept=".pdf" class="hidden" />
+
+      <label for="protect-password" class="pages-label">Password</label>
+      <input id="protect-password" type="password" class="tool-text-input" placeholder="Choose a password" />
+      <p class="dropzone-hint pages-hint">Anyone opening this PDF will need this password - don't lose it, there's no recovery.</p>
+
+      <button id="protect-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Protect PDF
+      </button>
+      <p id="protect-error" class="tool-error hidden"></p>
+      <a id="protect-download" class="download-btn hidden" download="protected.pdf">Download protected.pdf</a>
+    </div>
+
+    <div id="watermark-panel" class="tool-card hidden">
+      <label for="watermark-file-input">Upload a PDF to watermark</label>
+      <label id="watermark-dropzone" for="watermark-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="watermark-dropzone-text">Click to choose a PDF</span>
+        <span class="dropzone-hint">Supports PDF only</span>
+      </label>
+      <input id="watermark-file-input" type="file" accept=".pdf" class="hidden" />
+
+      <label for="watermark-text" class="pages-label">Watermark text</label>
+      <input id="watermark-text" type="text" class="tool-text-input" placeholder="e.g. CONFIDENTIAL, DRAFT" maxlength="60" />
+      <p class="dropzone-hint pages-hint">Stamped diagonally across every page.</p>
+
+      <button id="watermark-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+        Add watermark
+      </button>
+      <p id="watermark-error" class="tool-error hidden"></p>
+      <a id="watermark-download" class="download-btn hidden" download="watermarked.pdf">Download watermarked.pdf</a>
+    </div>
+
+    <div id="compress-panel" class="tool-card hidden">
+      <label for="compress-file-input">Upload a PDF to compress</label>
+      <label id="compress-dropzone" for="compress-file-input" class="dropzone">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span id="compress-dropzone-text">Click to choose a PDF</span>
+        <span class="dropzone-hint">Supports PDF only</span>
+      </label>
+      <input id="compress-file-input" type="file" accept=".pdf" class="hidden" />
+
+      <label class="pages-label">Compression level</label>
+      <div class="quality-toggle">
+        <button type="button" class="quality-opt" data-quality="low">Smallest file</button>
+        <button type="button" class="quality-opt active" data-quality="medium">Balanced</button>
+        <button type="button" class="quality-opt" data-quality="high">Best quality</button>
+      </div>
+
+      <button id="compress-btn" class="primary-btn">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        Compress PDF
+      </button>
+      <p id="compress-error" class="tool-error hidden"></p>
+      <p id="compress-result" class="hidden"></p>
+      <a id="compress-download" class="download-btn hidden" download="compressed.pdf">Download compressed.pdf</a>
     </div>
 
     <div id="ocr-panel" class="tool-card hidden">

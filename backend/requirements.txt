@@ -10,6 +10,7 @@ PyMySQL==1.1.1
 cryptography==43.0.1
 python-multipart==0.0.12
 pypdf==5.1.0
+reportlab==4.2.5
 python-docx==1.1.2
 python-pptx==1.0.2
 pytesseract==0.3.13

@@ -59,11 +59,96 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-function formatReply(text) {
+// Turns the handful of markdown the model actually uses (headers, bold,
+// italics, inline code, bullet/numbered lists, --- rules) into real HTML
+// instead of dumping literal "###"/"**"/"* " characters into the bubble.
+// Deliberately small and regex-based rather than pulling in a markdown
+// library - extensions can't load remotely-hosted code, and this covers
+// everything the assistant's replies (summaries, definitions, explanations,
+// quiz feedback, etc.) actually produce.
+function formatInline(text) {
   let html = escapeHtml(text);
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/\n/g, "<br>");
+  html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
+  html = html.replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
   return html;
+}
+
+function formatReply(text) {
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  let listType = null;
+  let paragraph = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length) {
+      out.push(`<p>${paragraph.join("<br>")}</p>`);
+      paragraph = [];
+    }
+  };
+  const closeList = () => {
+    if (listType) {
+      out.push(`</${listType}>`);
+      listType = null;
+    }
+  };
+
+  for (const raw of lines) {
+    const line = raw.trim();
+
+    if (!line) {
+      flushParagraph();
+      closeList();
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,3})\s+(.*)$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      out.push(`<div class="msg-h${heading[1].length}">${formatInline(heading[2])}</div>`);
+      continue;
+    }
+
+    if (/^(-{3,}|\*{3,})$/.test(line)) {
+      flushParagraph();
+      closeList();
+      out.push("<hr>");
+      continue;
+    }
+
+    const bullet = line.match(/^[*-]\s+(.*)$/);
+    if (bullet) {
+      flushParagraph();
+      if (listType !== "ul") {
+        closeList();
+        out.push("<ul>");
+        listType = "ul";
+      }
+      out.push(`<li>${formatInline(bullet[1])}</li>`);
+      continue;
+    }
+
+    const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+    if (numbered) {
+      flushParagraph();
+      if (listType !== "ol") {
+        closeList();
+        out.push("<ol>");
+        listType = "ol";
+      }
+      out.push(`<li>${formatInline(numbered[1])}</li>`);
+      continue;
+    }
+
+    closeList();
+    paragraph.push(formatInline(line));
+  }
+  flushParagraph();
+  closeList();
+
+  return out.join("");
 }
 
 // Just draws a message bubble - does not save it. Used both for new

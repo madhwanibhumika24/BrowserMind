@@ -6,6 +6,9 @@ applyStoredTheme();
 const modeTabs = document.querySelectorAll(".mode-tab");
 const mergePanel = document.getElementById("merge-panel");
 const splitPanel = document.getElementById("split-panel");
+const protectPanel = document.getElementById("protect-panel");
+const watermarkPanel = document.getElementById("watermark-panel");
+const compressPanel = document.getElementById("compress-panel");
 const ocrPanel = document.getElementById("ocr-panel");
 
 let mergeFiles = [];
@@ -179,6 +182,209 @@ function resetSplitBtn() {
 
 splitDownload.addEventListener("click", (e) => e.preventDefault());
 
+// ---- Protect ----
+
+const protectFileInput = document.getElementById("protect-file-input");
+const protectDropzoneText = document.getElementById("protect-dropzone-text");
+const protectPasswordInput = document.getElementById("protect-password");
+const protectBtn = document.getElementById("protect-btn");
+const protectError = document.getElementById("protect-error");
+const protectDownload = document.getElementById("protect-download");
+
+protectFileInput.addEventListener("change", () => {
+  protectDropzoneText.textContent = protectFileInput.files[0]?.name || "Click to choose a PDF";
+});
+
+function resetProtectBtn() {
+  protectBtn.disabled = false;
+  protectBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    Protect PDF`;
+}
+
+protectBtn.addEventListener("click", async () => {
+  protectError.classList.add("hidden");
+  protectDownload.classList.add("hidden");
+
+  const file = protectFileInput.files[0];
+  const password = protectPasswordInput.value;
+
+  if (!file) {
+    protectError.textContent = "Choose a PDF first.";
+    protectError.classList.remove("hidden");
+    return;
+  }
+  if (!password) {
+    protectError.textContent = "Enter a password.";
+    protectError.classList.remove("hidden");
+    return;
+  }
+
+  protectBtn.disabled = true;
+  protectBtn.textContent = "Protecting...";
+
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("password", password);
+
+    const res = await fetch(`${BASE_URL}/pdf-tools/protect`, { method: "POST", body });
+    if (!res.ok) throw new Error(await parseErrorResponse(res));
+
+    const blob = await res.blob();
+    triggerDownload(blob, "protected.pdf");
+    protectDownload.classList.remove("hidden");
+  } catch (err) {
+    protectError.textContent = err.message || "Could not protect that file - try again.";
+    protectError.classList.remove("hidden");
+  } finally {
+    resetProtectBtn();
+  }
+});
+
+protectDownload.addEventListener("click", (e) => e.preventDefault());
+
+// ---- Watermark ----
+
+const watermarkFileInput = document.getElementById("watermark-file-input");
+const watermarkDropzoneText = document.getElementById("watermark-dropzone-text");
+const watermarkTextInput = document.getElementById("watermark-text");
+const watermarkBtn = document.getElementById("watermark-btn");
+const watermarkError = document.getElementById("watermark-error");
+const watermarkDownload = document.getElementById("watermark-download");
+
+watermarkFileInput.addEventListener("change", () => {
+  watermarkDropzoneText.textContent = watermarkFileInput.files[0]?.name || "Click to choose a PDF";
+});
+
+function resetWatermarkBtn() {
+  watermarkBtn.disabled = false;
+  watermarkBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg>
+    Add watermark`;
+}
+
+watermarkBtn.addEventListener("click", async () => {
+  watermarkError.classList.add("hidden");
+  watermarkDownload.classList.add("hidden");
+
+  const file = watermarkFileInput.files[0];
+  const text = watermarkTextInput.value.trim();
+
+  if (!file) {
+    watermarkError.textContent = "Choose a PDF first.";
+    watermarkError.classList.remove("hidden");
+    return;
+  }
+  if (!text) {
+    watermarkError.textContent = "Enter watermark text.";
+    watermarkError.classList.remove("hidden");
+    return;
+  }
+
+  watermarkBtn.disabled = true;
+  watermarkBtn.textContent = "Adding watermark...";
+
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("text", text);
+
+    const res = await fetch(`${BASE_URL}/pdf-tools/watermark`, { method: "POST", body });
+    if (!res.ok) throw new Error(await parseErrorResponse(res));
+
+    const blob = await res.blob();
+    triggerDownload(blob, "watermarked.pdf");
+    watermarkDownload.classList.remove("hidden");
+  } catch (err) {
+    watermarkError.textContent = err.message || "Could not watermark that file - try again.";
+    watermarkError.classList.remove("hidden");
+  } finally {
+    resetWatermarkBtn();
+  }
+});
+
+watermarkDownload.addEventListener("click", (e) => e.preventDefault());
+
+// ---- Compress ----
+
+const compressFileInput = document.getElementById("compress-file-input");
+const compressDropzoneText = document.getElementById("compress-dropzone-text");
+const compressQualityOpts = document.querySelectorAll(".quality-opt");
+const compressBtn = document.getElementById("compress-btn");
+const compressError = document.getElementById("compress-error");
+const compressResult = document.getElementById("compress-result");
+const compressDownload = document.getElementById("compress-download");
+
+let compressQuality = "medium";
+
+compressFileInput.addEventListener("change", () => {
+  compressDropzoneText.textContent = compressFileInput.files[0]?.name || "Click to choose a PDF";
+});
+
+compressQualityOpts.forEach((opt) => {
+  opt.addEventListener("click", () => {
+    compressQuality = opt.dataset.quality;
+    compressQualityOpts.forEach((o) => o.classList.toggle("active", o === opt));
+  });
+});
+
+function resetCompressBtn() {
+  compressBtn.disabled = false;
+  compressBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" y1="10" x2="21" y2="3"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+    Compress PDF`;
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+}
+
+compressBtn.addEventListener("click", async () => {
+  compressError.classList.add("hidden");
+  compressResult.classList.add("hidden");
+  compressDownload.classList.add("hidden");
+
+  const file = compressFileInput.files[0];
+  if (!file) {
+    compressError.textContent = "Choose a PDF first.";
+    compressError.classList.remove("hidden");
+    return;
+  }
+
+  compressBtn.disabled = true;
+  compressBtn.textContent = "Compressing...";
+
+  try {
+    const body = new FormData();
+    body.append("file", file);
+    body.append("quality", compressQuality);
+
+    const res = await fetch(`${BASE_URL}/pdf-tools/compress`, { method: "POST", body });
+    if (!res.ok) throw new Error(await parseErrorResponse(res));
+
+    const blob = await res.blob();
+    triggerDownload(blob, "compressed.pdf");
+
+    const saved = file.size > 0 ? Math.round((1 - blob.size / file.size) * 100) : 0;
+    compressResult.textContent =
+      saved > 0
+        ? `${formatBytes(file.size)} → ${formatBytes(blob.size)} (${saved}% smaller)`
+        : `${formatBytes(file.size)} → ${formatBytes(blob.size)} (already well compressed)`;
+    compressResult.classList.remove("hidden");
+    compressDownload.classList.remove("hidden");
+  } catch (err) {
+    compressError.textContent = err.message || "Could not compress that file - try again.";
+    compressError.classList.remove("hidden");
+  } finally {
+    resetCompressBtn();
+  }
+});
+
+compressDownload.addEventListener("click", (e) => e.preventDefault());
+
 // ---- OCR ----
 
 const ocrFileInput = document.getElementById("ocr-file-input");
@@ -254,7 +460,14 @@ ocrCopyBtn.addEventListener("click", async (e) => {
 
 // ---- Tabs ----
 
-const panelsByMode = { merge: mergePanel, split: splitPanel, ocr: ocrPanel };
+const panelsByMode = {
+  merge: mergePanel,
+  split: splitPanel,
+  protect: protectPanel,
+  watermark: watermarkPanel,
+  compress: compressPanel,
+  ocr: ocrPanel,
+};
 
 modeTabs.forEach((tab) => {
   tab.addEventListener("click", () => {

@@ -3,7 +3,121 @@
    ../shared/tokens.css + ../shared/components.css (linked in the HTML
    before this file). */
 
-#tools-app { max-width: 560px; }
+#tools-app {
+  max-width: 700px;
+  /* Shared .page-shell defaults to 56px of top padding, which pushed this
+     page's centered header further down than it needs to be. */
+  padding-top: 28px;
+}
+
+/* Centered hero header, matching the Forms page's layout language - bigger
+   logo/heading, everything centered, extra breathing room before the tabs.
+   Plain, no card/ring/badge decoration - kept simple after a few rounds of
+   trying fancier treatments that didn't land. */
+header {
+  max-width: 560px;
+  margin: 0 auto 40px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.tools-logo {
+  width: 60px;
+  height: 60px;
+}
+
+.tools-heading h1 { font-size: 30px; }
+.tools-subtitle { font-size: 14.5px; }
+
+/* 6 tools read better as a grid of icon tiles than a cramped single-row
+   pill switcher - each tile scans quickly by icon, and every button is the
+   same comfortable size regardless of its label length ("Watermark PDF"
+   used to be the one label long enough to wrap and throw the whole row's
+   alignment off). */
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 28px;
+}
+
+.mode-tab {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-md);
+  padding: 16px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--bm-text-muted);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.mode-tab-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--bm-radius-sm);
+  background: rgba(var(--bm-accent-rgb), 0.12);
+  color: var(--bm-accent-soft);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mode-tab:hover {
+  border-color: rgba(var(--bm-accent-rgb), 0.4);
+  color: var(--bm-text);
+  transform: translateY(-1px);
+}
+
+.mode-tab.active {
+  background: rgba(var(--bm-accent-rgb), 0.08);
+  border-color: var(--bm-accent);
+  color: var(--bm-text);
+  box-shadow: 0 4px 12px rgba(20, 22, 30, 0.1);
+}
+
+/* Each tile's icon keeps its own brand color whether active or not - see
+   the inline style on each .mode-tab-icon in the HTML - so every tool
+   stays equally visible at a glance instead of only the selected one
+   standing out. Which tab is active is communicated by the tile's own
+   border/background/shadow above, not by recoloring the icon. */
+
+@media (max-width: 560px) {
+  .mode-tabs { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* More breathing room inside every tool panel - labels, dropzones, and
+   inputs were all sitting right on top of each other at the shared
+   defaults, which read as cramped rather than clean. */
+.tool-card { padding: 32px; }
+.tool-card label { margin-bottom: 10px; }
+.dropzone {
+  padding: 36px 16px;
+  margin-bottom: 24px;
+  background: rgba(var(--bm-accent-rgb), 0.06);
+  border-color: rgba(var(--bm-accent-rgb), 0.35);
+}
+
+.dropzone:hover {
+  background: rgba(var(--bm-accent-rgb), 0.1);
+  border-color: var(--bm-accent);
+}
+.pages-label { margin-top: 26px; }
+.pages-hint { margin: 10px 0 22px; }
+.quality-toggle { margin-top: 4px; margin-bottom: 24px; }
+#merge-file-list { margin-bottom: 22px; }
+#ocr-result { margin-top: 22px; }
 
 .pages-hint {
   margin: 6px 0 0;
@@ -49,21 +163,66 @@
 
 .merge-file-remove:hover { color: var(--bm-danger); }
 
-#split-pages {
+/* Shared by every single-line text field across these panels: split page
+   ranges, the protect password, and the watermark text. Sized and tinted
+   to match the dropzone above it rather than reading as a small, easy-to-
+   miss afterthought. */
+.tool-text-input {
   width: 100%;
-  background: var(--bm-bg);
-  border: 1px solid var(--bm-border);
+  height: 48px;
+  background: rgba(var(--bm-accent-rgb), 0.04);
+  border: 1.5px solid var(--bm-border);
   border-radius: var(--bm-radius-md);
   color: var(--bm-text);
-  padding: 11px 14px;
-  font-size: 14px;
+  padding: 0 16px;
+  font-size: 15px;
   font-family: inherit;
   margin-bottom: 4px;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-#split-pages:focus {
+.tool-text-input::placeholder { color: var(--bm-text-muted); }
+
+.tool-text-input:hover { border-color: rgba(var(--bm-accent-rgb), 0.4); }
+
+.tool-text-input:focus {
   outline: none;
   border-color: var(--bm-accent);
+  background: rgba(var(--bm-accent-rgb), 0.08);
+}
+
+.quality-toggle {
+  display: flex;
+  gap: 6px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-pill);
+  padding: 4px;
+  margin-bottom: 18px;
+}
+
+.quality-opt {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: var(--bm-radius-pill);
+  color: var(--bm-text-muted);
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.quality-opt.active {
+  background: var(--bm-accent);
+  color: #fff;
+}
+
+#compress-result {
+  color: var(--bm-success);
+  font-weight: 600;
 }
 
 .ocr-note {
