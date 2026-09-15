@@ -14,24 +14,58 @@ from app.models.schemas import DocumentChatRequest, DocumentChatResponse, Docume
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
+MAX_UPLOAD_FILES = 10
+
+
+def _combined_filename(names: list[str]) -> str:
+    """One display name for a (possibly multi-file) upload - just the name
+    for a single file, otherwise a short comma-joined preview so the chat
+    header/list don't try to cram a dozen filenames onto one line."""
+    if len(names) == 1:
+        return names[0]
+    shown = ", ".join(names[:3])
+    if len(names) > 3:
+        shown += f" +{len(names) - 3} more"
+    return shown
+
 
 @router.post("/upload", response_model=DocumentInfo)
 async def upload_document(
-    file: UploadFile = File(...), user: User = Depends(get_current_user)
+    files: list[UploadFile] = File(...), user: User = Depends(get_current_user)
 ) -> DocumentInfo:
-    if not file.filename or not file.filename.lower().endswith(SUPPORTED_EXTENSIONS):
-        raise HTTPException(status_code=400, detail="Only PDF, Word (.docx), and PowerPoint (.pptx) files are supported")
+    if not files:
+        raise HTTPException(status_code=400, detail="Choose at least one file")
+    if len(files) > MAX_UPLOAD_FILES:
+        raise HTTPException(status_code=400, detail=f"Upload at most {MAX_UPLOAD_FILES} files at once")
 
-    content = await file.read()
-    try:
-        text = extract_text(file.filename, content)
-    except Exception as exc:
-        raise HTTPException(status_code=400, detail=f"Could not read that file: {exc}")
+    # Each file's text goes in under its own "=== filename ===" marker so
+    # the chunks retrieved during chat still carry which document they came
+    # from - lets the assistant say "according to X" when it matters, and
+    # keeps multiple documents from blurring into one undifferentiated blob.
+    sections: list[str] = []
+    names: list[str] = []
+    for f in files:
+        if not f.filename or not f.filename.lower().endswith(SUPPORTED_EXTENSIONS):
+            raise HTTPException(
+                status_code=400,
+                detail=f"'{f.filename or 'file'}' isn't a PDF, Word, or PowerPoint file",
+            )
+        content = await f.read()
+        try:
+            text = extract_text(f.filename, content)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Could not read '{f.filename}': {exc}")
 
-    if not text.strip():
-        raise HTTPException(status_code=400, detail="No readable text found in that file")
+        if not text.strip():
+            raise HTTPException(status_code=400, detail=f"No readable text found in '{f.filename}'")
 
-    return document_store.create(creator_id=user.google_id, filename=file.filename, text=text)
+        sections.append(f"=== {f.filename} ===\n{text.strip()}")
+        names.append(f.filename)
+
+    combined_text = "\n\n".join(sections)
+    return document_store.create(
+        creator_id=user.google_id, filename=_combined_filename(names), text=combined_text
+    )
 
 
 @router.post("/{document_id}/chat", response_model=DocumentChatResponse)
@@ -50,6 +84,8 @@ async def chat(
             document.id, document.filename, document.text, body.message, body.history
         )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Could not get a reply: {exc}")
+        # chat_with_document already raises a clean, user-facing message
+        # (see _ask_llm) - pass it straight through instead of re-wrapping it.
+        raise HTTPException(status_code=502, detail=str(exc))
 
     return DocumentChatResponse(reply=reply)
