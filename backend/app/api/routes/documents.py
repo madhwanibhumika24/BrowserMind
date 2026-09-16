@@ -10,7 +10,14 @@ from app.agents.document_chat import chat_with_document
 from app.auth.dependencies import get_current_user
 from app.documents.store import document_store
 from app.forms.extract import SUPPORTED_EXTENSIONS, extract_text
-from app.models.schemas import DocumentChatRequest, DocumentChatResponse, DocumentInfo, User
+from app.models.schemas import (
+    DocumentChatMessage,
+    DocumentChatRequest,
+    DocumentChatResponse,
+    DocumentInfo,
+    MessageResponse,
+    User,
+)
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -68,6 +75,33 @@ async def upload_document(
     )
 
 
+@router.get("", response_model=list[DocumentInfo])
+async def list_documents(user: User = Depends(get_current_user)) -> list[DocumentInfo]:
+    """Every chat thread this user has started, newest first - powers the
+    Chat with Document history sidebar."""
+    return document_store.list_by_creator(user.id)
+
+
+@router.get("/{document_id}/messages", response_model=list[DocumentChatMessage])
+async def get_document_messages(
+    document_id: str, user: User = Depends(get_current_user)
+) -> list[DocumentChatMessage]:
+    """The saved conversation for one thread, in order - used to replay a
+    thread when it's reopened from the history sidebar."""
+    document = document_store.get_owned(document_id, user.id)
+    if not document:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return document_store.list_messages(document_id)
+
+
+@router.delete("/{document_id}", response_model=MessageResponse)
+async def delete_document(document_id: str, user: User = Depends(get_current_user)) -> MessageResponse:
+    deleted = document_store.delete(document_id, user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return MessageResponse(message="Chat deleted")
+
+
 @router.post("/{document_id}/chat", response_model=DocumentChatResponse)
 async def chat(
     document_id: str, body: DocumentChatRequest, user: User = Depends(get_current_user)
@@ -87,5 +121,10 @@ async def chat(
         # chat_with_document already raises a clean, user-facing message
         # (see _ask_llm) - pass it straight through instead of re-wrapping it.
         raise HTTPException(status_code=502, detail=str(exc))
+
+    # Best effort (see add_message) - saved so this thread can be reopened
+    # later from the history sidebar; doesn't block the reply either way.
+    document_store.add_message(document_id, "user", body.message)
+    document_store.add_message(document_id, "assistant", reply)
 
     return DocumentChatResponse(reply=reply)

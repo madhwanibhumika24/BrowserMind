@@ -162,6 +162,31 @@ export async function chatWithDocument(documentId, message, history) {
   return res.json();
 }
 
+// The Chat with Document history sidebar - every past chat thread
+// (newest first), the saved messages for reopening one, and deleting one.
+export async function listDocumentChats() {
+  const res = await fetch(`${BASE_URL}/documents`, { headers: await authHeaders() });
+  if (!res.ok) throw new Error(await errorMessage(res, "Could not load chat history"));
+  return res.json();
+}
+
+export async function getDocumentMessages(documentId) {
+  const res = await fetch(`${BASE_URL}/documents/${documentId}/messages`, {
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(await errorMessage(res, "Could not load that chat"));
+  return res.json();
+}
+
+export async function deleteDocumentChat(documentId) {
+  const res = await fetch(`${BASE_URL}/documents/${documentId}`, {
+    method: "DELETE",
+    headers: await authHeaders(),
+  });
+  if (!res.ok) throw new Error(await errorMessage(res, "Could not delete that chat"));
+  return res.json();
+}
+
 export async function downloadResponsesCsv(formId, fallbackName) {
   const res = await fetch(`${BASE_URL}/forms/${formId}/responses.csv`, {
     headers: await authHeaders(),

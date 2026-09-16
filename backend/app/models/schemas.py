@@ -176,12 +176,22 @@ class ChatTurn(BaseModel):
 
 class DocumentChatRequest(BaseModel):
     message: str
-    history: list[ChatTurn] = []  # kept client-side, replayed each call - no
-    # server-side chat history storage needed for this feature.
+    # Still sent by the client and replayed to the LLM each call (simplest
+    # way to give the model conversation context) - but now ALSO saved
+    # server-side (see documents.py's chat route) so the thread can be
+    # reopened later from the history sidebar, even after the tab closes.
+    history: list[ChatTurn] = []
 
 
 class DocumentChatResponse(BaseModel):
     reply: str
+
+
+class DocumentChatMessage(BaseModel):
+    """One saved turn, returned when reopening a past chat thread."""
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: str
 
 
 class GrammarCheckRequest(BaseModel):

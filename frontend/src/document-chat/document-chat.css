@@ -1,72 +1,724 @@
-/* Chat with Document - page-specific rules only. Shared tokens, page shell,
-   header, tool-card, dropzone, primary button, and focus rings all come
-   from ../shared/tokens.css + ../shared/components.css (linked in the
-   HTML before this file). */
+/* Chat with Document - full ChatGPT-style app shell: a fixed sidebar of
+   past chats on the left, a full-height main column on the right. This
+   page intentionally opts out of the shared .page-shell centered-column
+   layout used by Forms/PDF Tools/Mindmap (see components.css) - a
+   persistent chat app reads better full-bleed, with the input pinned to
+   the bottom, than as a card floating in a centered column. Shared tokens,
+   .tool-card, .dropzone, .primary-btn, .back-link, .tool-error, and
+   .text-gradient still come from ../shared/components.css and are reused
+   below; only the app-shell layout is overridden here. */
 
-#doc-app { max-width: 620px; }
+.doc-body {
+  display: flex;
+  height: 100vh;
+  min-height: 0;
+  overflow: hidden;
+  justify-content: flex-start;
+}
 
-/* Chat view */
+#doc-app {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
 
-.doc-chat-header {
+/* ---------------------------------------------------------------------- */
+/* Sidebar - full height, fixed width, its own internal scroll for the
+   chat list so "New chat" and the brand row always stay put. */
+
+.doc-sidebar {
+  flex-shrink: 0;
+  width: 500px;
+  height: 100%;
+  background: var(--bm-surface);
+  /* A soft shadow instead of a flat 1px line reads as one panel sitting in
+     front of another (real depth) rather than two flat rectangles taped
+     together with a ruled line down the middle. */
+  border-right: 1px solid var(--bm-border);
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+  gap: 6px;
+}
+
+/* Drag-to-resize handle - a thin invisible strip straddling the sidebar's
+   right edge, widening to a visible accent bar on hover/drag so it reads
+   as grabbable without adding a permanent visual seam the rest of the
+   time. Width is set on .doc-sidebar directly via inline style by the
+   drag handler in document-chat.js (clamped 260-550px there). */
+.doc-sidebar-resize {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 8px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 3;
+}
+
+.doc-sidebar-resize::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 2px;
+  height: 100%;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.doc-sidebar-resize:hover::after,
+.doc-sidebar-resize.resizing::after {
+  background: var(--bm-accent);
+}
+
+.doc-sidebar-brand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
+  gap: 11px;
+  padding: 4px 6px 22px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.doc-sidebar-brand span {
+  flex: 1;
+}
+
+.doc-sidebar-brand img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+/* Always-visible way out of this tab back to the extension's own sidebar
+   panel - previously there was no way back to BrowserMind itself short of
+   closing the tab manually. Lives in the brand row so it's reachable
+   regardless of whether the empty state or an active chat is showing. */
+.doc-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-pill);
+  color: var(--bm-text-muted);
+  padding: 6px 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.doc-back-btn:hover {
+  color: var(--bm-text);
+  border-color: var(--bm-accent);
+  background: rgba(var(--bm-accent-rgb), 0.08);
+}
+
+.doc-new-chat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  margin-bottom: 20px;
+  border-radius: var(--bm-radius-md);
+  border: 1px solid rgba(var(--bm-accent-rgb), 0.35);
+  background: rgba(var(--bm-accent-rgb), 0.08);
+  color: var(--bm-accent-soft, var(--bm-accent));
+  font-size: 16px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.doc-new-chat:hover { background: rgba(var(--bm-accent-rgb), 0.16); }
+.doc-new-chat svg { width: 18px; height: 18px; }
+
+.doc-sidebar-label {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--bm-text-muted);
+  padding: 0 8px 8px;
+}
+
+.doc-history-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+}
+
+.doc-history-empty {
+  color: var(--bm-text-muted);
+  font-size: 13px;
+  text-align: center;
+  padding: 18px 10px;
+  line-height: 1.5;
+}
+
+.doc-history-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.doc-history-item:hover { background: var(--bm-surface-hover); }
+.doc-history-item.active { background: rgba(var(--bm-accent-rgb), 0.14); }
+
+.doc-history-item-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--bm-accent-rgb), 0.12);
+  color: var(--bm-accent-soft, var(--bm-accent));
+}
+.doc-history-item-icon svg { width: 17px; height: 17px; }
+
+.doc-history-item-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-history-item-title {
+  font-size: 15.5px;
+  color: var(--bm-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.doc-history-item.active .doc-history-item-title {
+  color: var(--bm-accent-soft, var(--bm-accent));
+  font-weight: 600;
+}
+
+.doc-history-item-time {
+  font-size: 12.5px;
+  color: var(--bm-text-muted);
+  margin-top: 2px;
+}
+
+.doc-history-item-delete {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: var(--bm-text-muted);
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+.doc-history-item:hover .doc-history-item-delete { opacity: 1; }
+.doc-history-item-delete:hover {
+  background: rgba(var(--bm-danger-rgb), 0.15);
+  color: var(--bm-danger);
+}
+.doc-history-item-delete svg { width: 18px; height: 18px; }
+
+/* ---------------------------------------------------------------------- */
+/* Main column */
+
+.doc-main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  /* Slightly different tone than the sidebar's --bm-surface, so the chat
+     column reads as its own space rather than a plain continuation of the
+     same panel color with only a hairline border between them. Being
+     opaque, this also sits on top of and hides the page's global .bg-dots
+     texture - so it gets its own faint dot pattern here instead, same
+     technique, theme-aware color, otherwise a short conversation just
+     leaves a big flat void below it. */
+  background-color: var(--bm-bg);
+  background-image: radial-gradient(var(--bm-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* A thin, always-present strip at the top of the main column - without it
+   the empty state was just a small card floating in an otherwise totally
+   blank canvas, with no chrome to anchor it. Hidden once a chat is open,
+   since .doc-chat-topbar (filename/actions) takes over that role then. */
+.doc-static-topbar {
+  flex-shrink: 0;
+  padding: 18px 28px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--bm-text-muted);
   border-bottom: 1px solid var(--bm-border);
 }
 
-.doc-filename {
+.doc-main:has(#chat-view:not(.hidden)) .doc-static-topbar {
+  display: none;
+}
+
+/* Empty/upload state - centered, like ChatGPT's "What are you working on?"
+   landing screen instead of a marketing header sitting above a card. A
+   soft radial glow behind the hero (.doc-empty-glow) and a full-bleed dot
+   grid (.bg-dots, from components.css) keep this from reading as a flat,
+   empty rectangle around one small card. */
+.doc-empty-state {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+}
+
+.doc-empty-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 640px;
+  height: 640px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(var(--bm-accent-rgb), 0.14), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.doc-empty-state > *:not(.doc-empty-glow) { position: relative; z-index: 1; }
+
+.doc-empty-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  border: 1px solid var(--bm-border);
+  box-shadow: var(--bm-shadow-card);
+  margin-bottom: 16px;
+}
+
+.doc-empty-state h1 { font-size: 28px; margin: 0 0 10px; }
+
+.doc-empty-subtitle {
+  margin: 0 0 28px;
+  max-width: 420px;
+  color: var(--bm-text-muted);
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+
+.doc-upload-card {
+  width: 100%;
+  max-width: 460px;
+  text-align: left;
+}
+
+/* .doc-upload-card reuses the shared .tool-card look, but that also brings
+   in ".tool-card label { text-transform: uppercase; letter-spacing: 0.4px;
+   font-weight: 700 }" (meant for a plain field label like "Job title") -
+   #doc-dropzone is itself a <label>, so that rule was landing directly on
+   it and inheriting down into its text, stretching "Click to upload" out
+   into spaced-out capitals. Reset it back to normal, readable text. */
+#doc-dropzone {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
   font-size: 14px;
-  font-weight: 700;
+  color: var(--bm-text-muted);
+}
+
+#upload-view .dropzone {
+  padding: 26px 16px;
+  margin-bottom: 14px;
+  background: rgba(var(--bm-accent-rgb), 0.06);
+  border-color: rgba(var(--bm-accent-rgb), 0.35);
+}
+#upload-view .dropzone:hover {
+  background: rgba(var(--bm-accent-rgb), 0.1);
+  border-color: var(--bm-accent);
+}
+
+/* Selected-files list for a multi-document upload - same pattern as the
+   PDF Tools "Merge" list, so picking, reviewing, and removing files before
+   upload looks and behaves the same way across the app. */
+#doc-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.doc-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.doc-file-item span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.doc-chat-header .back-link {
+.doc-file-remove {
   flex-shrink: 0;
-  margin-bottom: 0;
+  background: transparent;
+  border: none;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.doc-file-remove:hover { color: var(--bm-danger); }
+
+/* ---------------------------------------------------------------------- */
+/* Active chat state - top bar, scrollable transcript, input pinned to the
+   bottom, matching ChatGPT/Claude's chat layout. */
+
+.doc-chat {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-chat-topbar {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 8px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--bm-border);
+  background: var(--bm-surface);
+}
+
+.doc-filename-icon {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--bm-accent-rgb), 0.12);
+  color: var(--bm-accent-soft, var(--bm-accent));
+}
+.doc-filename-icon svg { width: 14px; height: 14px; }
+
+.doc-filename {
+  font-size: 13.5px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.doc-scope-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-scope-wrap label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--bm-text-muted);
+  white-space: nowrap;
+}
+
+#doc-scope-select {
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+  color: var(--bm-text);
+  padding: 6px 10px;
+  font-size: 12.5px;
+  font-family: inherit;
+  max-width: 200px;
+  transition: border-color 0.15s ease;
+}
+
+#doc-scope-select:hover,
+#doc-scope-select:focus {
+  outline: none;
+  border-color: var(--bm-accent);
+}
+
+.doc-chat-topbar-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Still reads as the highlighted action next to the plain "Change document"
+   button, but a soft accent-tinted pill (same treatment as "New chat" in
+   the sidebar) rather than a saturated gradient fill with an emoji - a
+   full-bleed CTA button read as a marketing element sitting inside a
+   utility toolbar, not like the rest of the app's own chrome. */
+.doc-quick-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(var(--bm-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--bm-accent-rgb), 0.3);
+  border-radius: var(--bm-radius-pill);
+  color: var(--bm-accent-soft, var(--bm-accent));
+  padding: 7px 15px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.doc-quick-btn:hover:not(:disabled) {
+  background: rgba(var(--bm-accent-rgb), 0.18);
+  border-color: rgba(var(--bm-accent-rgb), 0.5);
+}
+
+.doc-quick-btn:active:not(:disabled) { transform: scale(0.97); }
+.doc-quick-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* Give "Change document" real button affordance - the shared .back-link
+   style is plain muted text with no border/background, which read as
+   unclickable label text rather than a button here. */
+.doc-chat-topbar .back-link {
+  flex-shrink: 0;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-pill);
+  padding: 6px 14px;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.doc-chat-topbar .back-link:hover {
+  color: var(--bm-accent);
+  border-color: var(--bm-accent);
+  background: rgba(var(--bm-accent-rgb), 0.08);
 }
 
 #chat-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  padding: 28px 24px;
+  max-width: 820px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Each turn is an avatar + bubble row, not just a floating bubble - the
+   avatar gives every message a fixed anchor point (what a "professional"
+   chat UI like ChatGPT/Claude actually looks like) instead of text blocks
+   drifting in open space. row-reverse for the user's own messages puts
+   their avatar on the right and packs the row against that edge, with no
+   extra alignment rules needed. */
+.chat-row {
+  display: flex;
+  align-items: flex-start;
   gap: 10px;
-  min-height: 280px;
-  max-height: 420px;
-  overflow-y: auto;
-  margin-bottom: 16px;
-  padding-right: 2px;
+  width: 100%;
+}
+.chat-row.user { flex-direction: row-reverse; }
+
+.chat-avatar {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-avatar svg { width: 16px; height: 16px; }
+
+.chat-row.assistant .chat-avatar {
+  background: var(--bm-surface);
+  border: 1px solid var(--bm-border);
+  color: var(--bm-accent-soft, var(--bm-accent));
+}
+
+.chat-row.user .chat-avatar {
+  background: linear-gradient(135deg, var(--bm-accent), var(--bm-accent-2));
+  color: #fff;
 }
 
 .chat-bubble {
-  max-width: 85%;
-  padding: 10px 14px;
+  max-width: 78%;
+  padding: 12px 16px;
   border-radius: var(--bm-radius-md);
-  font-size: 13.5px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
 .chat-bubble.user {
-  align-self: flex-end;
-  background: linear-gradient(90deg, var(--bm-accent), var(--bm-accent-2));
+  background: linear-gradient(135deg, var(--bm-accent), var(--bm-accent-2));
   color: #fff;
   border-bottom-right-radius: 3px;
+  box-shadow: 0 3px 10px rgba(var(--bm-accent-rgb), 0.25);
 }
 
 .chat-bubble.assistant {
-  align-self: flex-start;
-  background: var(--bm-bg);
+  background: var(--bm-surface);
   border: 1px solid var(--bm-border);
   color: var(--bm-text);
   border-bottom-left-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .chat-bubble.pending {
   color: var(--bm-text-muted);
   font-style: italic;
+}
+
+/* Formatted markdown content inside an assistant bubble (formatReply in
+   ../utils/markdown.js) - real headings/lists/code instead of raw
+   "###"/"**"/"* " characters, matching the sidebar chat's styling. */
+.chat-bubble.assistant p { margin: 0 0 8px; }
+.chat-bubble.assistant p:last-child { margin-bottom: 0; }
+
+.chat-bubble.assistant .msg-h1,
+.chat-bubble.assistant .msg-h2,
+.chat-bubble.assistant .msg-h3 {
+  font-weight: 700;
+  color: var(--bm-text);
+  margin: 12px 0 6px;
+}
+
+.chat-bubble.assistant .msg-h1:first-child,
+.chat-bubble.assistant .msg-h2:first-child,
+.chat-bubble.assistant .msg-h3:first-child { margin-top: 0; }
+
+.chat-bubble.assistant .msg-h1 { font-size: 15px; }
+.chat-bubble.assistant .msg-h2 { font-size: 14px; }
+.chat-bubble.assistant .msg-h3 {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--bm-text-muted);
+}
+
+.chat-bubble.assistant ul,
+.chat-bubble.assistant ol {
+  margin: 0 0 8px;
+  padding-left: 20px;
+}
+
+.chat-bubble.assistant li { margin-bottom: 4px; }
+.chat-bubble.assistant li:last-child { margin-bottom: 0; }
+
+.chat-bubble.assistant strong { font-weight: 700; }
+.chat-bubble.assistant em { font-style: italic; }
+
+.chat-bubble.assistant code {
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12.5px;
+}
+
+.chat-bubble.assistant hr {
+  border: none;
+  border-top: 1px solid var(--bm-border);
+  margin: 10px 0;
+}
+
+/* Inline math ("$...$" from the model) rendered by renderFormula() in
+   ../utils/markdown.js - a clean pill with real sup/sub/fractions instead
+   of raw "$s = c \cdot \log(1 + r)$". Mirrors sidebar.css's .msg-assistant
+   version so both chat surfaces look the same. */
+.chat-bubble.assistant .bm-formula {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 13.5px;
+  background: rgba(var(--bm-accent-rgb), 0.08);
+  border: 1px solid rgba(var(--bm-accent-rgb), 0.22);
+  border-radius: 6px;
+  padding: 1px 7px;
+  margin: 0 1px;
+  color: var(--bm-text);
+  white-space: nowrap;
+}
+
+.chat-bubble.assistant .bm-formula sup,
+.chat-bubble.assistant .bm-formula sub {
+  font-style: italic;
+  font-size: 0.7em;
+}
+
+.chat-bubble.assistant .bm-formula .bm-fn {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--bm-accent-soft);
+}
+
+.chat-bubble.assistant .bm-formula .bm-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.05;
+  margin: 0 2px;
+  font-size: 0.85em;
+}
+
+.chat-bubble.assistant .bm-formula .bm-frac-num,
+.chat-bubble.assistant .bm-formula .bm-frac-den {
+  display: block;
+  padding: 0 2px;
+}
+
+.chat-bubble.assistant .bm-formula .bm-frac-num {
+  border-bottom: 1px solid currentColor;
+}
+
+.chat-bubble.assistant .bm-formula .bm-sqrt {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.chat-bubble.assistant .bm-formula .bm-sqrt-bar {
+  border-top: 1px solid currentColor;
+  padding: 0 2px;
+  margin-left: 1px;
 }
 
 .chat-empty {
@@ -76,21 +728,35 @@
   margin: auto 0;
 }
 
-.chat-input-row {
+.doc-chat-inputbar {
+  flex-shrink: 0;
+  padding: 16px 24px 22px;
+  background: linear-gradient(180deg, transparent, var(--bm-bg) 40%);
+}
+
+.doc-chat-input-inner {
+  max-width: 820px;
+  margin: 0 auto;
   display: flex;
   gap: 8px;
 }
 
 #chat-input {
   flex: 1;
-  background: var(--bm-bg);
-  border: 1px solid var(--bm-border);
-  border-radius: var(--bm-radius-md);
+  height: 48px;
+  background: var(--bm-surface);
+  border: 1.5px solid var(--bm-border);
+  border-radius: var(--bm-radius-lg);
   color: var(--bm-text);
-  padding: 11px 14px;
+  padding: 0 18px;
   font-size: 14px;
   font-family: inherit;
+  box-shadow: var(--bm-shadow-card);
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
+
+#chat-input::placeholder { color: var(--bm-text-muted); }
+#chat-input:hover { border-color: rgba(var(--bm-accent-rgb), 0.4); }
 
 #chat-input:focus {
   outline: none;
@@ -99,18 +765,33 @@
 
 #send-btn {
   flex-shrink: 0;
-  width: 42px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(90deg, var(--bm-accent), var(--bm-accent-2));
   border: none;
-  border-radius: var(--bm-radius-md);
+  border-radius: var(--bm-radius-lg);
   color: #fff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
 
 #send-btn svg { width: 16px; height: 16px; }
-#send-btn:hover:not(:disabled) { opacity: 0.9; }
+#send-btn:hover:not(:disabled) {
+  opacity: 0.95;
+  box-shadow: 0 4px 14px rgba(var(--bm-accent-rgb), 0.35);
+}
+#send-btn:active:not(:disabled) { transform: scale(0.96); }
 #send-btn:disabled { opacity: 0.6; cursor: default; }
+
+@media (max-width: 820px) {
+  .doc-sidebar {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    top: 0;
+    bottom: 0;
+  }
+}

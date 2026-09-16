@@ -108,3 +108,21 @@ class DocumentRow(Base):
     filename = Column(String(255), nullable=False)
     text = Column(LONGTEXT, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+
+
+class DocumentChatMessageRow(Base):
+    """One turn of a 'Chat with Document' conversation - lets a document's
+    chat thread be closed and reopened later (the history/memory sidebar),
+    instead of only living in the browser tab's memory until it's closed.
+    A `DocumentRow` already represents one whole chat thread (it may cover
+    several uploaded files at once - see `_combined_filename` in
+    api/routes/documents.py), so there's no separate "session" table here:
+    `document_id` on its own is the thread key.
+    """
+    __tablename__ = "document_chat_messages"
+
+    id = Column(String(36), primary_key=True)
+    document_id = Column(String(36), ForeignKey("documents.id"), nullable=False, index=True)
+    role = Column(String(16), nullable=False)  # "user" or "assistant"
+    content = Column(LONGTEXT, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())

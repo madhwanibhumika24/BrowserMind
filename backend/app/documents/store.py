@@ -7,10 +7,12 @@ the relevant pieces instead of stuffing the whole document into the prompt.
 """
 import uuid
 
+from sqlalchemy import func
+
 from app.core.embeddings import get_embeddings
-from app.db.models import DocumentRow
+from app.db.models import DocumentChatMessageRow, DocumentRow
 from app.db.session import get_db_session
-from app.models.schemas import DocumentInfo
+from app.models.schemas import DocumentChatMessage, DocumentInfo
 from app.vectorstore.chunking import chunk_text
 from app.vectorstore.client import document_chunks_collection
 
@@ -46,11 +48,14 @@ class DocumentStore:
 
         # Chunk + embed the (unrestricted, full) text for retrieval. Best
         # effort - if embedding fails for any reason (bad/missing API key,
-        # rate limit) chat still works via the full-text fallback below.
+        # rate limit, deprecated model) chat still works via the full-text
+        # fallback below. Still logged (not silently swallowed) - a fully
+        # silent failure here is exactly what let text-embedding-004's
+        # deprecation go unnoticed for months.
         try:
             self._index_chunks(info.id, filename, text)
-        except Exception:
-            pass
+        except Exception as exc:
+            print(f"[documents.store] embedding failed for '{filename}': {exc}")
 
         return info
 
@@ -103,6 +108,94 @@ class DocumentStore:
             return row
         finally:
             db.close()
+
+    def list_by_creator(self, creator_id: str) -> list[DocumentInfo]:
+        """Most-recently-active first, for the Chat with Document history
+        sidebar - a thread you just sent a message in jumps back to the
+        top (like ChatGPT/Claude's history), instead of staying pinned
+        wherever it was when first uploaded. "Activity" is the latest
+        message's timestamp, falling back to the upload time itself for a
+        thread with no messages yet."""
+        db = get_db_session()
+        try:
+            last_activity = func.coalesce(
+                func.max(DocumentChatMessageRow.created_at), DocumentRow.created_at
+            )
+            rows = (
+                db.query(DocumentRow)
+                .outerjoin(
+                    DocumentChatMessageRow, DocumentChatMessageRow.document_id == DocumentRow.id
+                )
+                .filter(DocumentRow.creator_id == creator_id)
+                .group_by(DocumentRow.id)
+                .order_by(last_activity.desc())
+                .all()
+            )
+            return [_to_schema(r) for r in rows]
+        finally:
+            db.close()
+
+    def add_message(self, document_id: str, role: str, content: str) -> None:
+        """Saves one turn of a chat thread so it can be reopened later.
+        Best effort - if this fails for some reason the reply the user just
+        saw is unaffected, they'd just lose this one turn on reopen."""
+        db = get_db_session()
+        try:
+            db.add(
+                DocumentChatMessageRow(
+                    id=str(uuid.uuid4()), document_id=document_id, role=role, content=content
+                )
+            )
+            db.commit()
+        except Exception as exc:
+            print(f"[documents.store] failed to save {role} message for document {document_id}: {exc}")
+        finally:
+            db.close()
+
+    def list_messages(self, document_id: str) -> list[DocumentChatMessage]:
+        """Chronological order, for replaying a reopened thread."""
+        db = get_db_session()
+        try:
+            rows = (
+                db.query(DocumentChatMessageRow)
+                .filter(DocumentChatMessageRow.document_id == document_id)
+                .order_by(DocumentChatMessageRow.created_at)
+                .all()
+            )
+            return [
+                DocumentChatMessage(
+                    role=r.role,
+                    content=r.content,
+                    created_at=r.created_at.isoformat() if r.created_at else "",
+                )
+                for r in rows
+            ]
+        finally:
+            db.close()
+
+    def delete(self, document_id: str, creator_id: str) -> bool:
+        """Deletes a whole chat thread: the document row, its saved
+        messages, and its indexed chunks in Chroma. Returns False (and
+        deletes nothing) if this user doesn't own the document."""
+        db = get_db_session()
+        try:
+            row = db.get(DocumentRow, document_id)
+            if not row or row.creator_id != creator_id:
+                return False
+            db.query(DocumentChatMessageRow).filter(
+                DocumentChatMessageRow.document_id == document_id
+            ).delete()
+            db.delete(row)
+            db.commit()
+        finally:
+            db.close()
+
+        try:
+            document_chunks_collection.delete(where={"document_id": document_id})
+        except Exception as exc:
+            print(f"[documents.store] failed to delete Chroma chunks for document {document_id}: {exc}")
+
+        return True
 
 
 document_store = DocumentStore()
