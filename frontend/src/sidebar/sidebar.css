@@ -836,11 +836,53 @@ header {
   text-align: center;
 }
 
+.home-greeting {
+  width: 100%;
+  max-width: 320px;
+}
+
+.home-greeting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  text-align: left;
+}
+
 .home-greeting h2 {
-  margin: 0 0 8px;
+  margin: 0;
   font-size: 19px;
   font-weight: 700;
   color: var(--bm-text);
+}
+
+/* New chat used to be a tile in the tools grid below - pulled up next to
+   the greeting instead, since it's a reset action rather than a feature,
+   and giving it its own row frees the grid for actual tools. */
+.home-newchat-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-pill);
+  color: var(--bm-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.home-newchat-link svg { width: 13px; height: 13px; }
+
+.home-newchat-link:hover {
+  color: var(--bm-text);
+  border-color: rgba(108, 92, 231, 0.4);
+  background: var(--bm-surface-hover);
 }
 
 .home-greeting p {
@@ -848,7 +890,7 @@ header {
   color: var(--bm-text-muted);
   font-size: 12.5px;
   line-height: 1.5;
-  max-width: 280px;
+  text-align: left;
 }
 
 .wave {
@@ -884,6 +926,7 @@ header {
   gap: 10px;
   width: 100%;
   max-width: 320px;
+  margin-bottom: 18px;
 }
 
 .home-tool {
@@ -943,6 +986,50 @@ header {
   line-height: 1.3;
 }
 
+/* JobFit's tile - the newest, most distinctive feature, so it gets a
+   little visual lift instead of blending into the grid like everything
+   else. It's the lone item in its section, so the existing "odd lone
+   tile spans the row" rule above already gives it the wider, inline
+   icon+text layout this treatment builds on. */
+.home-tool-feature {
+  /* Warm gold family, not the app's usual purple - matches the icon and
+     the "New" badge so the whole card reads as one deliberate accent
+     instead of three unrelated colors sharing a tile. */
+  border-color: rgba(251, 191, 36, 0.35);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(251, 191, 36, 0.02));
+}
+
+.home-tool-feature:hover {
+  border-color: #fbbf24;
+}
+
+.home-tool-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.home-tool-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--bm-radius-pill);
+  background: var(--bm-warning);
+  color: #1a1a1a;
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
+
+.home-tool-desc {
+  font-size: 11px;
+  color: var(--bm-text-muted);
+  font-weight: 500;
+  line-height: 1.35;
+}
+
 .home-tip-card {
   display: flex;
   align-items: flex-start;
@@ -982,6 +1069,430 @@ header {
   margin: 0;
   font-size: 11.5px;
   line-height: 1.5;
+  color: var(--bm-text-muted);
+}
+
+/* ---- JobFit view ----
+   Lives directly in the sidebar (see #jobfit-view in the HTML), so every
+   rule here is written for the ~280-600px sidebar column rather than a
+   full browser tab - single-column layout, smaller type, stacked skill
+   lists instead of side-by-side columns. */
+
+#jobfit-view {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 16px 20px;
+}
+
+#jobfit-refresh-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+#jobfit-refresh-btn svg { width: 13px; height: 13px; }
+
+#jobfit-refresh-btn:hover {
+  background: var(--bm-surface-hover);
+  color: var(--bm-text);
+}
+
+.jobfit-job-info {
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--bm-border);
+}
+
+.jobfit-job-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--bm-accent-soft, var(--bm-accent));
+  margin-bottom: 4px;
+}
+
+.jobfit-job-info h3 {
+  margin: 0 0 3px;
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.jobfit-job-info p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--bm-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* :not(.jobfit-dropzone) matters here - the dropzone itself is also a
+   <label> (wraps the hidden file input), and text-transform inherits into
+   its children by default. Without this exclusion, the selected filename
+   and the "PDF, Word, or PowerPoint" hint both rendered in shouty caps. */
+#jobfit-view label:not(.jobfit-dropzone) {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--bm-text-muted);
+  margin-bottom: 6px;
+}
+
+.jobfit-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-align: center;
+  border: 1.5px dashed var(--bm-border);
+  border-radius: 10px;
+  padding: 18px 12px;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.jobfit-dropzone:hover {
+  border-color: var(--bm-accent);
+  background: rgba(108, 92, 231, 0.06);
+}
+
+.jobfit-dropzone span:first-of-type {
+  color: var(--bm-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.jobfit-dropzone-hint {
+  font-size: 10.5px;
+}
+
+/* Selected-file chip - swapped in for the dropzone once a resume is picked,
+   so the filename gets its own readable row instead of being squeezed into
+   the dropzone's label text. Mirrors .doc-file-item's look. */
+#jobfit-selected-file {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.jobfit-file-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--bm-text);
+}
+
+#jobfit-remove-file-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+#jobfit-remove-file-btn:hover {
+  color: var(--bm-danger);
+}
+
+#jobfit-resume-cached-section p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--bm-text);
+  background: rgba(var(--bm-success-rgb), 0.1);
+  border: 1px solid rgba(var(--bm-success-rgb), 0.3);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.jobfit-primary-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(90deg, var(--bm-accent), var(--bm-accent-2, var(--bm-accent)));
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s ease;
+}
+
+.jobfit-primary-btn:hover:not(:disabled) { opacity: 0.92; }
+.jobfit-primary-btn:disabled { opacity: 0.6; cursor: default; }
+
+#jobfit-error {
+  color: var(--bm-danger);
+  font-size: 12px;
+  margin: 10px 0 0;
+}
+
+#jobfit-overview,
+#jobfit-result {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bm-border);
+}
+
+#jobfit-overview h4 {
+  margin: 0 0 8px;
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.jobfit-role-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.jobfit-chip {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--bm-text-muted);
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.jobfit-subheading {
+  margin: 14px 0 6px;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--bm-text-muted);
+}
+
+.jobfit-subheading.matched { color: #6ee7b7; }
+.jobfit-subheading.missing { color: var(--bm-text-muted); }
+
+#jobfit-resp-wrap ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--bm-text);
+}
+
+#jobfit-resp-wrap li { margin-bottom: 3px; }
+#jobfit-resp-wrap li:last-child { margin-bottom: 0; }
+
+.jobfit-divider {
+  height: 1px;
+  background: var(--bm-border);
+  margin: 16px 0;
+}
+
+.jobfit-company-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.jobfit-company-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.14);
+  color: var(--bm-accent);
+}
+
+.jobfit-company-row span#jobfit-company-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+#jobfit-overview > p {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--bm-text);
+}
+
+#jobfit-company-facts {
+  color: var(--bm-text-muted);
+  font-style: italic;
+}
+
+#jobfit-company-empty {
+  color: var(--bm-text-muted);
+  font-size: 11.5px;
+}
+
+.jobfit-score-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.jobfit-score {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  border: 2px solid var(--bm-border);
+}
+
+.jobfit-score.high {
+  color: #6ee7b7;
+  border-color: rgba(var(--bm-success-rgb), 0.5);
+  background: rgba(var(--bm-success-rgb), 0.1);
+}
+
+.jobfit-score.mid {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.jobfit-score.low {
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.5);
+  background: rgba(248, 113, 113, 0.1);
+}
+
+#jobfit-summary {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--bm-text);
+}
+
+#jobfit-summary p { margin: 0 0 5px; }
+#jobfit-summary p:last-child { margin-bottom: 0; }
+
+/* Segmented tab bar - splits the result into History / About / Skills
+   Required instead of one long scroll, so each is a quick tap away rather
+   than something the user has to hunt for further down the panel. */
+.jobfit-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+  padding: 3px;
+  margin-bottom: 14px;
+}
+
+.jobfit-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.jobfit-tab:hover {
+  color: var(--bm-text);
+}
+
+.jobfit-tab.active {
+  background: var(--bm-surface);
+  color: var(--bm-accent-soft, var(--bm-accent));
+  box-shadow: 0 1px 3px rgba(20, 22, 30, 0.15);
+}
+
+.jobfit-tab-panel {
+  animation: jobfit-tab-fade 0.12s ease;
+}
+
+@keyframes jobfit-tab-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+#jobfit-history-empty {
+  color: var(--bm-text-muted);
+  font-size: 11.5px;
+}
+
+.jobfit-tab-placeholder {
+  color: var(--bm-text-muted);
+  font-size: 12px;
+  text-align: center;
+  padding: 22px 10px;
+  margin: 0;
+  border: 1px dashed var(--bm-border);
+  border-radius: var(--bm-radius-sm);
+}
+
+.jobfit-skill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.jobfit-chip.matched {
+  color: #6ee7b7;
+  background: rgba(var(--bm-success-rgb), 0.12);
+  border-color: rgba(var(--bm-success-rgb), 0.4);
+}
+
+.jobfit-chip.missing {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.jobfit-skill-empty {
+  margin: 0;
+  font-size: 11.5px;
   color: var(--bm-text-muted);
 }
 

@@ -65,50 +65,183 @@
       </div>
       <div id="memory-list"></div>
     </div>
+    <div id="jobfit-view" class="hidden">
+      <button id="jobfit-back-btn" class="back-link">← Back</button>
+      <div class="view-header-row">
+        <h2>JobFit</h2>
+        <button id="jobfit-refresh-btn" title="Re-check this page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>
+        </button>
+      </div>
+
+      <div class="jobfit-job-info">
+        <span class="jobfit-job-label">Job page detected</span>
+        <h3 id="jobfit-job-title">—</h3>
+        <p id="jobfit-job-url"></p>
+        <div class="jobfit-role-tags" id="jobfit-role-tags"></div>
+        <div id="jobfit-resp-wrap" class="hidden">
+          <div class="jobfit-subheading">Key responsibilities</div>
+          <ul id="jobfit-responsibilities"></ul>
+        </div>
+      </div>
+
+      <div id="jobfit-resume-upload-section">
+        <label for="jobfit-resume-file-input">Upload your resume</label>
+        <label id="jobfit-resume-dropzone" for="jobfit-resume-file-input" class="jobfit-dropzone">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span id="jobfit-resume-dropzone-text">Click to upload</span>
+          <span class="jobfit-dropzone-hint">PDF, Word, or PowerPoint</span>
+        </label>
+        <div id="jobfit-selected-file" class="hidden"></div>
+        <input id="jobfit-resume-file-input" type="file" accept=".pdf,.docx,.pptx" class="hidden" />
+      </div>
+
+      <div id="jobfit-resume-cached-section" class="hidden">
+        <p id="jobfit-resume-cached-note"></p>
+        <button type="button" id="jobfit-change-resume-btn" class="back-link">Use a different resume</button>
+      </div>
+
+      <button id="jobfit-analyze-btn" class="jobfit-primary-btn">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+        Analyze Fit
+      </button>
+      <p id="jobfit-error" class="hidden"></p>
+
+      <!-- Tabs are always visible, even before the first analysis, so the
+           user can see up front what JobFit will tell them. Each panel
+           shows a "run analysis" placeholder until a result comes in. -->
+      <div class="jobfit-tabs" role="tablist">
+        <button type="button" class="jobfit-tab" data-tab="history" role="tab">History</button>
+        <button type="button" class="jobfit-tab active" data-tab="about" role="tab">About</button>
+        <button type="button" class="jobfit-tab" data-tab="skills" role="tab">Skills Required</button>
+      </div>
+
+      <div id="jobfit-score-row" class="jobfit-score-row hidden">
+        <div class="jobfit-score" id="jobfit-score">0%</div>
+        <p id="jobfit-summary"></p>
+      </div>
+
+      <div id="jobfit-tab-history" class="jobfit-tab-panel hidden">
+        <p id="jobfit-history-placeholder" class="jobfit-tab-placeholder">Hit "Analyze Fit" to see this company's background and history.</p>
+        <p id="jobfit-company-facts" class="hidden"></p>
+        <p id="jobfit-history-empty" class="hidden">No company history or background found on this page.</p>
+      </div>
+
+      <div id="jobfit-tab-about" class="jobfit-tab-panel">
+        <p id="jobfit-about-placeholder" class="jobfit-tab-placeholder">Hit "Analyze Fit" to see what this company or startup does.</p>
+        <div id="jobfit-company-row" class="jobfit-company-row hidden">
+          <span class="jobfit-company-icon">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>
+          </span>
+          <span id="jobfit-company-name">—</span>
+          <span id="jobfit-company-industry" class="jobfit-chip hidden"></span>
+        </div>
+        <p id="jobfit-company-overview" class="hidden"></p>
+        <p id="jobfit-company-empty" class="hidden">No company details found on this page.</p>
+      </div>
+
+      <div id="jobfit-tab-skills" class="jobfit-tab-panel hidden">
+        <p id="jobfit-skills-placeholder" class="jobfit-tab-placeholder">Hit "Analyze Fit" to see your matched and missing skills.</p>
+        <div id="jobfit-skills-content" class="hidden">
+          <div class="jobfit-subheading matched">✓ Matched skills</div>
+          <div id="jobfit-matched-skills" class="jobfit-skill-list"></div>
+
+          <div class="jobfit-subheading missing">Missing skills</div>
+          <div id="jobfit-missing-skills" class="jobfit-skill-list"></div>
+        </div>
+      </div>
+    </div>
     <div id="home-view">
       <div class="home-greeting">
-        <h2>Welcome<span id="home-greeting-name"></span> <span class="wave">👋</span></h2>
-        <p>Chat, summarize, quiz yourself, or revisit what BrowserMind remembers — right from this page.</p>
+        <div class="home-greeting-row">
+          <h2>Welcome<span id="home-greeting-name"></span> <span class="wave">👋</span></h2>
+          <button class="home-newchat-link" id="home-newchat-btn" title="Start a new chat">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+            New chat
+          </button>
+        </div>
+        <p>Chat, summarize, quiz yourself, or dig into documents and job postings — right from this page.</p>
       </div>
-      <div class="home-section-label">Tools</div>
+
+      <div class="home-section-label">Page tools</div>
       <div class="home-tools">
         <button class="home-tool" id="home-summarize-btn">
-          <span class="home-tool-icon">
+          <span class="home-tool-icon" style="background:rgba(108,92,231,0.16); color:#a78bfa;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V4M5 11l7-7 7 7"/></svg>
           </span>
           <span class="home-tool-label">Summarize page</span>
         </button>
-        <button class="home-tool" id="home-tabs-btn">
-          <span class="home-tool-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"/><rect x="14" y="5" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          </span>
-          <span class="home-tool-label">Summarize tabs</span>
-        </button>
         <button class="home-tool" id="home-quiz-btn">
-          <span class="home-tool-icon">
+          <span class="home-tool-icon" style="background:rgba(224,150,92,0.16); color:#fbbf24;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 2.5 3 6 3s6-1.5 6-3v-5"/></svg>
           </span>
           <span class="home-tool-label">Quiz me</span>
         </button>
-        <button class="home-tool" id="home-memory-btn">
-          <span class="home-tool-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+        <button class="home-tool" id="home-tabs-btn">
+          <span class="home-tool-icon" style="background:rgba(63,169,245,0.16); color:#7dd3fc;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="7" height="7" rx="1"/><rect x="14" y="5" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           </span>
-          <span class="home-tool-label">View memory</span>
+          <span class="home-tool-label">Summarize tabs</span>
+        </button>
+      </div>
+
+      <div class="home-section-label">Documents</div>
+      <div class="home-tools">
+        <button class="home-tool" id="home-chatdoc-btn">
+          <span class="home-tool-icon" style="background:rgba(45,212,191,0.16); color:#5eead4;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg>
+          </span>
+          <span class="home-tool-label">Chat with Document</span>
+        </button>
+        <button class="home-tool" id="home-pdftools-btn">
+          <span class="home-tool-icon" style="background:rgba(63,169,245,0.16); color:#7dd3fc;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15h6M9 11h6"/></svg>
+          </span>
+          <span class="home-tool-label">PDF Tools</span>
         </button>
         <button class="home-tool" id="home-forms-btn">
-          <span class="home-tool-icon">
+          <span class="home-tool-icon" style="background:rgba(236,72,153,0.16); color:#f9a8d4;">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/><path d="M9 12h6M9 16h6M9 8h2"/></svg>
           </span>
           <span class="home-tool-label">Create form</span>
         </button>
-        <button class="home-tool" id="home-newchat-btn">
-          <span class="home-tool-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="7" x2="12" y2="13"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+        <button class="home-tool" id="home-texttools-btn">
+          <span class="home-tool-icon" style="background:rgba(62,207,142,0.16); color:#6ee7b7;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
           </span>
-          <span class="home-tool-label">New chat</span>
+          <span class="home-tool-label">Text Tools</span>
         </button>
       </div>
+
+      <div class="home-section-label">Career</div>
+      <div class="home-tools">
+        <button class="home-tool home-tool-feature" id="home-jobfit-btn">
+          <span class="home-tool-icon" style="background:rgba(224,150,92,0.16); color:#fbbf24;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6h-3V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2H8a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><path d="M11 4h2v2h-2z"/><path d="m4 10 3 3-3 3"/></svg>
+          </span>
+          <span class="home-tool-text">
+            <span class="home-tool-label">JobFit <span class="home-tool-badge">New</span></span>
+            <span class="home-tool-desc">See how well your resume matches a job posting</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="home-section-label">More</div>
+      <div class="home-tools">
+        <button class="home-tool" id="home-mindmap-btn">
+          <span class="home-tool-icon" style="background:rgba(108,92,231,0.16); color:#a78bfa;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 11l9.4-4M7.3 13l9.4 4"/></svg>
+          </span>
+          <span class="home-tool-label">Mindmap Generator</span>
+        </button>
+        <button class="home-tool" id="home-memory-btn">
+          <span class="home-tool-icon" style="background:rgba(63,169,245,0.16); color:#7dd3fc;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>
+          </span>
+          <span class="home-tool-label">View memory</span>
+        </button>
+      </div>
+
       <div class="home-tip-card">
         <span class="home-tip-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.6 1 1.3 1 2.5h6c0-1.2.4-1.9 1-2.5A6 6 0 0 0 12 3z"/></svg>
@@ -176,6 +309,12 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="2.5"/><circle cx="19" cy="6" r="2.5"/><circle cx="19" cy="18" r="2.5"/><path d="M7.3 11l9.4-4M7.3 13l9.4 4"/></svg>
             </span>
             <span>Mindmap Generator</span>
+          </button>
+          <button class="more-tool-item" id="more-jobfit-btn">
+            <span class="more-tool-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6h-3V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2H8a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2z"/><path d="M11 4h2v2h-2z"/><path d="m4 10 3 3-3 3"/></svg>
+            </span>
+            <span>JobFit</span>
           </button>
         </div>
       </div>

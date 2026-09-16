@@ -4,8 +4,10 @@ import {
   generateSummary,
   getMemory,
   deleteMemory,
+  analyzeJobFit,
 } from "../utils/api.js";
 import { signInWithGoogle, signOut, getStoredAuth } from "../utils/auth.js";
+import { formatReply } from "../utils/markdown.js";
 
 // sessionId and historyMessages can both get replaced once we restore a
 // saved chat for this site (see restoreHistory below), so they're `let`.
@@ -24,6 +26,43 @@ const memoryView = document.getElementById("memory-view");
 const memoryBackBtn = document.getElementById("memory-back-btn");
 const memoryList = document.getElementById("memory-list");
 const memoryRefreshBtn = document.getElementById("memory-refresh-btn");
+
+const jobfitView = document.getElementById("jobfit-view");
+const jobfitBackBtn = document.getElementById("jobfit-back-btn");
+const jobfitRefreshBtn = document.getElementById("jobfit-refresh-btn");
+const jobfitJobTitleEl = document.getElementById("jobfit-job-title");
+const jobfitJobUrlEl = document.getElementById("jobfit-job-url");
+const jobfitResumeUploadSection = document.getElementById("jobfit-resume-upload-section");
+const jobfitResumeCachedSection = document.getElementById("jobfit-resume-cached-section");
+const jobfitResumeCachedNote = document.getElementById("jobfit-resume-cached-note");
+const jobfitChangeResumeBtn = document.getElementById("jobfit-change-resume-btn");
+const jobfitResumeFileInput = document.getElementById("jobfit-resume-file-input");
+const jobfitResumeDropzoneText = document.getElementById("jobfit-resume-dropzone-text");
+const jobfitResumeDropzone = document.getElementById("jobfit-resume-dropzone");
+const jobfitSelectedFileEl = document.getElementById("jobfit-selected-file");
+const jobfitAnalyzeBtn = document.getElementById("jobfit-analyze-btn");
+const jobfitErrorEl = document.getElementById("jobfit-error");
+const jobfitTabButtons = document.querySelectorAll(".jobfit-tab");
+const jobfitScoreRowEl = document.getElementById("jobfit-score-row");
+const jobfitAboutPlaceholderEl = document.getElementById("jobfit-about-placeholder");
+const jobfitHistoryPlaceholderEl = document.getElementById("jobfit-history-placeholder");
+const jobfitSkillsPlaceholderEl = document.getElementById("jobfit-skills-placeholder");
+const jobfitSkillsContentEl = document.getElementById("jobfit-skills-content");
+const jobfitRoleTagsEl = document.getElementById("jobfit-role-tags");
+const jobfitRespWrap = document.getElementById("jobfit-resp-wrap");
+const jobfitRespListEl = document.getElementById("jobfit-responsibilities");
+const jobfitCompanyRowEl = document.getElementById("jobfit-company-row");
+const jobfitCompanyNameEl = document.getElementById("jobfit-company-name");
+const jobfitCompanyIndustryEl = document.getElementById("jobfit-company-industry");
+const jobfitCompanyOverviewEl = document.getElementById("jobfit-company-overview");
+const jobfitCompanyFactsEl = document.getElementById("jobfit-company-facts");
+const jobfitCompanyEmptyEl = document.getElementById("jobfit-company-empty");
+const jobfitHistoryEmptyEl = document.getElementById("jobfit-history-empty");
+const jobfitScoreEl = document.getElementById("jobfit-score");
+const jobfitSummaryEl = document.getElementById("jobfit-summary");
+const jobfitMatchedSkillsEl = document.getElementById("jobfit-matched-skills");
+const jobfitMissingSkillsEl = document.getElementById("jobfit-missing-skills");
+
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const closeBtn = document.getElementById("close-btn");
@@ -34,6 +73,11 @@ const homeTabsBtn = document.getElementById("home-tabs-btn");
 const homeQuizBtn = document.getElementById("home-quiz-btn");
 const homeMemoryBtn = document.getElementById("home-memory-btn");
 const homeFormsBtn = document.getElementById("home-forms-btn");
+const homeChatDocBtn = document.getElementById("home-chatdoc-btn");
+const homePdfToolsBtn = document.getElementById("home-pdftools-btn");
+const homeTextToolsBtn = document.getElementById("home-texttools-btn");
+const homeMindmapBtn = document.getElementById("home-mindmap-btn");
+const homeJobFitBtn = document.getElementById("home-jobfit-btn");
 const formsBtn = document.getElementById("forms-btn");
 const homeNewChatBtn = document.getElementById("home-newchat-btn");
 const homeGreetingName = document.getElementById("home-greeting-name");
@@ -52,104 +96,10 @@ const morePdfToolsBtn = document.getElementById("more-pdf-tools-btn");
 const moreChatDocBtn = document.getElementById("more-chat-doc-btn");
 const moreTextToolsBtn = document.getElementById("more-text-tools-btn");
 const moreMindmapBtn = document.getElementById("more-mindmap-btn");
+const moreJobFitBtn = document.getElementById("more-jobfit-btn");
 
-function escapeHtml(text) {
-  const div = document.createElement("div");
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// Turns the handful of markdown the model actually uses (headers, bold,
-// italics, inline code, bullet/numbered lists, --- rules) into real HTML
-// instead of dumping literal "###"/"**"/"* " characters into the bubble.
-// Deliberately small and regex-based rather than pulling in a markdown
-// library - extensions can't load remotely-hosted code, and this covers
-// everything the assistant's replies (summaries, definitions, explanations,
-// quiz feedback, etc.) actually produce.
-function formatInline(text) {
-  let html = escapeHtml(text);
-  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
-  html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
-  html = html.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, "$1<em>$2</em>");
-  html = html.replace(/(^|[^_])_([^_\n]+)_(?!_)/g, "$1<em>$2</em>");
-  return html;
-}
-
-function formatReply(text) {
-  const lines = text.replace(/\r\n/g, "\n").split("\n");
-  const out = [];
-  let listType = null;
-  let paragraph = [];
-
-  const flushParagraph = () => {
-    if (paragraph.length) {
-      out.push(`<p>${paragraph.join("<br>")}</p>`);
-      paragraph = [];
-    }
-  };
-  const closeList = () => {
-    if (listType) {
-      out.push(`</${listType}>`);
-      listType = null;
-    }
-  };
-
-  for (const raw of lines) {
-    const line = raw.trim();
-
-    if (!line) {
-      flushParagraph();
-      closeList();
-      continue;
-    }
-
-    const heading = line.match(/^(#{1,3})\s+(.*)$/);
-    if (heading) {
-      flushParagraph();
-      closeList();
-      out.push(`<div class="msg-h${heading[1].length}">${formatInline(heading[2])}</div>`);
-      continue;
-    }
-
-    if (/^(-{3,}|\*{3,})$/.test(line)) {
-      flushParagraph();
-      closeList();
-      out.push("<hr>");
-      continue;
-    }
-
-    const bullet = line.match(/^[*-]\s+(.*)$/);
-    if (bullet) {
-      flushParagraph();
-      if (listType !== "ul") {
-        closeList();
-        out.push("<ul>");
-        listType = "ul";
-      }
-      out.push(`<li>${formatInline(bullet[1])}</li>`);
-      continue;
-    }
-
-    const numbered = line.match(/^\d+[.)]\s+(.*)$/);
-    if (numbered) {
-      flushParagraph();
-      if (listType !== "ol") {
-        closeList();
-        out.push("<ol>");
-        listType = "ol";
-      }
-      out.push(`<li>${formatInline(numbered[1])}</li>`);
-      continue;
-    }
-
-    closeList();
-    paragraph.push(formatInline(line));
-  }
-  flushParagraph();
-  closeList();
-
-  return out.join("");
-}
+// formatReply (markdown -> HTML for assistant bubbles) lives in
+// ../utils/markdown.js now, shared with document-chat.js.
 
 // Just draws a message bubble - does not save it. Used both for new
 // messages and for redrawing messages restored from storage.
@@ -170,7 +120,7 @@ function renderMessage(text, who) {
 // end up looking at two screens stacked on top of each other at once
 // (which is what the old toggle-a-panel-open-on-top-of-whatever's-already-
 // showing approach used to do for Memory).
-const VIEWS = { home: homeView, chat: chatLog, memory: memoryView };
+const VIEWS = { home: homeView, chat: chatLog, memory: memoryView, jobfit: jobfitView };
 
 function showView(name) {
   for (const [key, el] of Object.entries(VIEWS)) {
@@ -203,6 +153,303 @@ function openMemoryView() {
   showView("memory");
   loadMemory();
 }
+
+// ---- JobFit ----
+// Lives directly in the sidebar (unlike PDF Tools/Forms/etc., which open
+// their own tab) so it can read the active tab's content immediately, with
+// no separate tab or chrome.storage hand-off needed. Re-checking the page
+// is still a manual click (the refresh button / re-opening the view) - not
+// automatic on every navigation, to avoid firing an analysis nobody asked
+// for every time the user browses to a different listing.
+
+const JOBFIT_RESUME_CACHE_KEY = "browsermindJobFitResume"; // { text, filename }
+
+let jobfitJobData = null; // { url, title, content }
+let jobfitCachedResume = null; // { text, filename }
+let jobfitSelectedResumeFile = null;
+
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// "about" is the default active tab - matches the non-hidden panel/button
+// already set in the markup, so the very first render (before any JS runs)
+// looks correct too.
+const JOBFIT_TABS = ["history", "about", "skills"];
+
+function setJobfitActiveTab(tabKey) {
+  for (const key of JOBFIT_TABS) {
+    document.getElementById(`jobfit-tab-${key}`).classList.toggle("hidden", key !== tabKey);
+  }
+  jobfitTabButtons.forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.tab === tabKey);
+  });
+}
+
+jobfitTabButtons.forEach((btn) => {
+  btn.addEventListener("click", () => setJobfitActiveTab(btn.dataset.tab));
+});
+
+// Tabs stay visible and clickable even with no analysis yet (see the
+// "buttons here" request) - this just puts every panel back to its
+// "run analysis" placeholder state and hides the score, rather than
+// hiding the tabs themselves.
+function resetJobfitOutput() {
+  jobfitErrorEl.classList.add("hidden");
+  jobfitScoreRowEl.classList.add("hidden");
+
+  // Role tags/responsibilities live in the job-info card up top, not a tab
+  // - they're about this specific posting, not the company.
+  jobfitRoleTagsEl.innerHTML = "";
+  jobfitRespWrap.classList.add("hidden");
+
+  jobfitHistoryPlaceholderEl.classList.remove("hidden");
+  jobfitCompanyFactsEl.classList.add("hidden");
+  jobfitHistoryEmptyEl.classList.add("hidden");
+
+  jobfitAboutPlaceholderEl.classList.remove("hidden");
+  jobfitCompanyRowEl.classList.add("hidden");
+  jobfitCompanyOverviewEl.classList.add("hidden");
+  jobfitCompanyEmptyEl.classList.add("hidden");
+
+  jobfitSkillsPlaceholderEl.classList.remove("hidden");
+  jobfitSkillsContentEl.classList.add("hidden");
+}
+
+async function loadJobfitPageData() {
+  const activeTab = await getActiveTab();
+  const content = await getJobPageText(activeTab.id);
+  jobfitJobData = { url: activeTab.url, title: activeTab.title, content };
+
+  if (content) {
+    jobfitJobTitleEl.textContent = activeTab.title || "Untitled page";
+    jobfitJobUrlEl.textContent = activeTab.url || "";
+    jobfitAnalyzeBtn.disabled = false;
+  } else {
+    jobfitJobTitleEl.textContent = "No page content detected";
+    jobfitJobUrlEl.textContent = "Try reloading the page, then hit the refresh button above.";
+    jobfitAnalyzeBtn.disabled = true;
+  }
+}
+
+function renderJobfitResumeSection() {
+  if (jobfitCachedResume) {
+    jobfitResumeUploadSection.classList.add("hidden");
+    jobfitResumeCachedSection.classList.remove("hidden");
+    jobfitResumeCachedNote.textContent = `Using "${jobfitCachedResume.filename || "your last uploaded resume"}".`;
+  } else {
+    jobfitResumeUploadSection.classList.remove("hidden");
+    jobfitResumeCachedSection.classList.add("hidden");
+  }
+}
+
+async function loadJobfitCachedResume() {
+  const stored = await chrome.storage.local.get(JOBFIT_RESUME_CACHE_KEY);
+  jobfitCachedResume = stored[JOBFIT_RESUME_CACHE_KEY] || null;
+  renderJobfitResumeSection();
+}
+
+// Once a file's picked, swap the dropzone out for a compact "selected
+// file" chip instead of cramming the filename into the dropzone's own
+// label text - a full resume filename plus the format hint squeezed into
+// one small box read as cramped and hard to parse at a glance.
+function renderJobfitSelectedFile() {
+  if (jobfitSelectedResumeFile) {
+    jobfitResumeDropzone.classList.add("hidden");
+    jobfitSelectedFileEl.classList.remove("hidden");
+    jobfitSelectedFileEl.innerHTML = `
+      <span class="jobfit-file-chip-name">${escapeHtml(jobfitSelectedResumeFile.name)}</span>
+      <button type="button" id="jobfit-remove-file-btn" title="Remove">✕</button>`;
+    document.getElementById("jobfit-remove-file-btn").addEventListener("click", () => {
+      jobfitSelectedResumeFile = null;
+      jobfitResumeFileInput.value = "";
+      renderJobfitSelectedFile();
+    });
+  } else {
+    jobfitResumeDropzone.classList.remove("hidden");
+    jobfitSelectedFileEl.classList.add("hidden");
+    jobfitSelectedFileEl.innerHTML = "";
+    jobfitResumeDropzoneText.textContent = "Click to upload";
+  }
+}
+
+jobfitResumeFileInput.addEventListener("change", () => {
+  jobfitSelectedResumeFile = jobfitResumeFileInput.files[0] || null;
+  renderJobfitSelectedFile();
+});
+
+jobfitChangeResumeBtn.addEventListener("click", async () => {
+  jobfitCachedResume = null;
+  jobfitSelectedResumeFile = null;
+  jobfitResumeFileInput.value = "";
+  renderJobfitSelectedFile();
+  await chrome.storage.local.remove(JOBFIT_RESUME_CACHE_KEY);
+  renderJobfitResumeSection();
+});
+
+function jobfitScoreClass(score) {
+  if (score >= 80) return "high";
+  if (score >= 50) return "mid";
+  return "low";
+}
+
+function renderJobfitSkillChips(container, skills, variant) {
+  if (!skills.length) {
+    container.innerHTML = `<p class="jobfit-skill-empty">${
+      variant === "missing" ? "None - nice work!" : "None found."
+    }</p>`;
+    return;
+  }
+  container.innerHTML = skills.map((s) => `<span class="jobfit-chip ${variant}">${escapeHtml(s)}</span>`).join("");
+}
+
+function setJobfitOptionalText(el, text) {
+  if (text && text.trim()) {
+    el.textContent = text;
+    el.classList.remove("hidden");
+  } else {
+    el.classList.add("hidden");
+  }
+}
+
+// Role tags (employment type, location) + responsibilities sit in the
+// job-info card at the top, not in a tab - they describe this specific
+// posting rather than the company, so they stay visible alongside the
+// detected title/URL instead of competing with the company tabs below.
+function renderJobfitRoleSnapshot(result) {
+  const role = result.role || {};
+
+  const tags = [role.employment_type, role.location].filter(Boolean);
+  jobfitRoleTagsEl.innerHTML = tags.map((t) => `<span class="jobfit-chip">${escapeHtml(t)}</span>`).join("");
+
+  const responsibilities = role.responsibilities || [];
+  if (responsibilities.length) {
+    jobfitRespListEl.innerHTML = responsibilities.map((r) => `<li>${escapeHtml(r)}</li>`).join("");
+    jobfitRespWrap.classList.remove("hidden");
+  } else {
+    jobfitRespWrap.classList.add("hidden");
+  }
+}
+
+// "About" = purely the company/startup itself - what it does, its
+// industry, a short overview. Deliberately excludes role details (see
+// renderJobfitRoleSnapshot above) so this tab reads as "about the
+// company", not a mix of company + job posting facts.
+function renderJobfitAbout(result) {
+  const company = result.company || {};
+
+  jobfitAboutPlaceholderEl.classList.add("hidden");
+  jobfitCompanyRowEl.classList.remove("hidden");
+
+  const hasCompanyBasics = company.name || company.overview || company.industry;
+  jobfitCompanyNameEl.textContent = company.name || "Company not identified";
+  setJobfitOptionalText(jobfitCompanyIndustryEl, company.industry);
+  setJobfitOptionalText(jobfitCompanyOverviewEl, company.overview);
+  jobfitCompanyEmptyEl.classList.toggle("hidden", Boolean(hasCompanyBasics));
+}
+
+// "History" = whatever the model actually recognizes about the company's
+// background, focus areas, or recent news - kept separate from "About" so
+// a quick glance at the role doesn't get buried under a paragraph of
+// company trivia, and so an empty history doesn't read as "no info at all".
+function renderJobfitHistory(result) {
+  const company = result.company || {};
+  jobfitHistoryPlaceholderEl.classList.add("hidden");
+  setJobfitOptionalText(jobfitCompanyFactsEl, company.notable_facts);
+  jobfitHistoryEmptyEl.classList.toggle("hidden", Boolean(company.notable_facts && company.notable_facts.trim()));
+}
+
+function showJobfitResult(result) {
+  // Leaves whichever tab the user already has open alone (they may have
+  // been browsing History/Skills while the analysis was running) - just
+  // fills in real content under all three instead of yanking them back
+  // to a default tab.
+  renderJobfitRoleSnapshot(result);
+  renderJobfitAbout(result);
+  renderJobfitHistory(result);
+
+  jobfitScoreRowEl.classList.remove("hidden");
+  jobfitScoreEl.textContent = `${result.fit_score}%`;
+  jobfitScoreEl.className = `jobfit-score ${jobfitScoreClass(result.fit_score)}`;
+  jobfitSummaryEl.innerHTML = formatReply(result.summary);
+
+  jobfitSkillsPlaceholderEl.classList.add("hidden");
+  jobfitSkillsContentEl.classList.remove("hidden");
+  renderJobfitSkillChips(jobfitMatchedSkillsEl, result.matched_skills, "matched");
+  renderJobfitSkillChips(jobfitMissingSkillsEl, result.missing_skills, "missing");
+}
+
+function resetJobfitAnalyzeBtn() {
+  jobfitAnalyzeBtn.disabled = false;
+  jobfitAnalyzeBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.4L12 2z"/></svg>
+    Analyze Fit`;
+}
+
+jobfitAnalyzeBtn.addEventListener("click", async () => {
+  jobfitErrorEl.classList.add("hidden");
+
+  if (!jobfitJobData?.content) {
+    jobfitErrorEl.textContent = "No job page detected - reload the page and try again.";
+    jobfitErrorEl.classList.remove("hidden");
+    return;
+  }
+  if (!jobfitCachedResume && !jobfitSelectedResumeFile) {
+    jobfitErrorEl.textContent = "Upload your resume first.";
+    jobfitErrorEl.classList.remove("hidden");
+    return;
+  }
+
+  jobfitAnalyzeBtn.disabled = true;
+  jobfitAnalyzeBtn.textContent = "Analyzing...";
+
+  try {
+    const result = await analyzeJobFit({
+      jobTitle: jobfitJobData.title,
+      jobText: jobfitJobData.content,
+      resumeFile: jobfitSelectedResumeFile,
+      resumeText: !jobfitSelectedResumeFile && jobfitCachedResume ? jobfitCachedResume.text : "",
+    });
+
+    if (result.resume_text) {
+      jobfitCachedResume = {
+        text: result.resume_text,
+        filename: jobfitSelectedResumeFile?.name || jobfitCachedResume?.filename || "your resume",
+      };
+      await chrome.storage.local.set({ [JOBFIT_RESUME_CACHE_KEY]: jobfitCachedResume });
+      jobfitSelectedResumeFile = null;
+      jobfitResumeFileInput.value = "";
+      renderJobfitSelectedFile();
+      renderJobfitResumeSection();
+    }
+
+    showJobfitResult(result);
+  } catch (err) {
+    jobfitErrorEl.textContent = err.message || "Could not analyze this job - try again.";
+    jobfitErrorEl.classList.remove("hidden");
+  } finally {
+    resetJobfitAnalyzeBtn();
+  }
+});
+
+async function showJobFitView() {
+  showView("jobfit");
+  resetJobfitOutput();
+  // No-op if called from the home tile (panel's already hidden there) -
+  // only actually does something when opened via the More Tools menu.
+  moreToolsPanel.classList.add("hidden");
+  moreToolsBtn.classList.remove("active");
+  renderJobfitSelectedFile();
+  await Promise.all([loadJobfitPageData(), loadJobfitCachedResume()]);
+}
+
+jobfitBackBtn.addEventListener("click", goHome);
+jobfitRefreshBtn.addEventListener("click", () => {
+  resetJobfitOutput();
+  loadJobfitPageData();
+});
 
 // Draws a new message AND saves it, so the conversation survives closing
 // and reopening the sidebar on this site.
@@ -291,6 +538,16 @@ function getActiveTab() {
 function getPageExcerpt(tabId) {
   return new Promise((resolve) => {
     chrome.tabs.sendMessage(tabId, { type: "GET_PAGE_EXCERPT" }, (result) => {
+      resolve(chrome.runtime.lastError ? "" : result);
+    });
+  });
+}
+
+// Much larger than getPageExcerpt above - JobFit needs the full job
+// requirements list, not just a short chat-context snippet.
+function getJobPageText(tabId) {
+  return new Promise((resolve) => {
+    chrome.tabs.sendMessage(tabId, { type: "GET_JOB_PAGE_TEXT" }, (result) => {
       resolve(chrome.runtime.lastError ? "" : result);
     });
   });
@@ -651,6 +908,12 @@ function openDocumentChat() {
   moreToolsBtn.classList.remove("active");
 }
 
+// Captures the current tab's page text before opening JobFit, same pattern
+// as handleQuiz() above - JobFit runs in its own full tab, which can't
+// reach back into whatever tab was active when the button was clicked.
+// Always opens a fresh tab (like PDF Tools/Text Tools/Mindmap do) rather
+// than reusing an existing one - reusing would risk showing an old job's
+// data if JobFit was already open from a previous posting.
 function openTextTools() {
   chrome.tabs.create({ url: chrome.runtime.getURL("src/text-tools/text-tools.html") });
   moreToolsPanel.classList.add("hidden");
@@ -695,6 +958,7 @@ morePdfToolsBtn.addEventListener("click", openPdfTools);
 moreChatDocBtn.addEventListener("click", openDocumentChat);
 moreTextToolsBtn.addEventListener("click", openTextTools);
 moreMindmapBtn.addEventListener("click", openMindmap);
+moreJobFitBtn.addEventListener("click", showJobFitView);
 document.addEventListener("click", (e) => {
   if (!moreToolsPanel.classList.contains("hidden") && !e.target.closest(".side-rail-more")) {
     moreToolsPanel.classList.add("hidden");
@@ -711,6 +975,11 @@ homeSummarizeBtn.addEventListener("click", summarizePage);
 homeTabsBtn.addEventListener("click", handleSummarize);
 homeQuizBtn.addEventListener("click", handleQuiz);
 homeMemoryBtn.addEventListener("click", openMemoryView);
+homeChatDocBtn.addEventListener("click", openDocumentChat);
+homePdfToolsBtn.addEventListener("click", openPdfTools);
+homeTextToolsBtn.addEventListener("click", openTextTools);
+homeMindmapBtn.addEventListener("click", openMindmap);
+homeJobFitBtn.addEventListener("click", showJobFitView);
 
 window.addEventListener("message", (event) => {
   if (event.data?.type === "BROWSERMIND_QUICK_ASK") {

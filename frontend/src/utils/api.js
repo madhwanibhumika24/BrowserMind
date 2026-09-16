@@ -121,16 +121,34 @@ export async function listMyForms() {
 // trigger the save via a throwaway object URL. Filename is built client-side
 // rather than read from Content-Disposition, since that header isn't
 // guaranteed to be exposed to fetch() across origins.
-export async function uploadDocument(file) {
+// Most backend errors here come back as FastAPI's {"detail": "..."} JSON -
+// surfacing that instead of just the status code is the difference between
+// the user seeing "Document not found" / "rate-limited, try again" and
+// always seeing the same generic message no matter what actually failed.
+async function errorMessage(res, fallback) {
+  try {
+    const body = await res.json();
+    if (body?.detail) return body.detail;
+  } catch {
+    // Response wasn't JSON - fall through to the generic message below.
+  }
+  return `${fallback}: ${res.status}`;
+}
+
+// `files` is an array (or FileList) - one or more documents to chat with
+// together in a single session. Each goes under the same "files" field
+// name, matching the backend's list[UploadFile] (same convention as the
+// PDF merge tool's multi-file upload).
+export async function uploadDocument(files) {
   const body = new FormData();
-  body.append("file", file);
+  for (const file of files) body.append("files", file);
 
   const res = await fetch(`${BASE_URL}/documents/upload`, {
     method: "POST",
     headers: await authHeaders(), // no Content-Type - browser sets the multipart boundary
     body,
   });
-  if (!res.ok) throw new Error(`Document upload failed: ${res.status}`);
+  if (!res.ok) throw new Error(await errorMessage(res, "Document upload failed"));
   return res.json();
 }
 
@@ -140,7 +158,7 @@ export async function chatWithDocument(documentId, message, history) {
     headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ message, history }),
   });
-  if (!res.ok) throw new Error(`Document chat failed: ${res.status}`);
+  if (!res.ok) throw new Error(await errorMessage(res, "Document chat failed"));
   return res.json();
 }
 
@@ -162,4 +180,19 @@ export async function downloadResponsesCsv(formId, fallbackName) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+// JobFit is stateless and unauthenticated like the PDF tools - no
+// authHeaders() needed. Pass either `resumeFile` (first use) or
+// `resumeText` (reusing a previously-cached extraction) - not both.
+export async function analyzeJobFit({ jobTitle, jobText, resumeFile, resumeText }) {
+  const body = new FormData();
+  body.append("job_title", jobTitle || "");
+  body.append("job_text", jobText || "");
+  if (resumeFile) body.append("resume", resumeFile);
+  if (resumeText) body.append("resume_text", resumeText);
+
+  const res = await fetch(`${BASE_URL}/jobfit/analyze`, { method: "POST", body });
+  if (!res.ok) throw new Error(await errorMessage(res, "JobFit analysis failed"));
+  return res.json();
 }

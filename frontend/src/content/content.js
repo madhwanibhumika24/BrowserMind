@@ -119,9 +119,25 @@ if (!window.browsermindLoaded) {
     sidebarFrame.contentWindow.postMessage({ type: "BROWSERMIND_FOCUS_INPUT" }, "*");
   }
 
-  chrome.runtime.onMessage.addListener((message) => {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     if (message.type === "TOGGLE_SIDEBAR") toggleSidebar();
-    if (message.type === "GET_PAGE_EXCERPT") return getPageExcerpt();
+    // A plain `return someValue` here does NOT deliver a response in
+    // Chrome's messaging API - only sendResponse() (or returning a real
+    // Promise) does. These two were silently returning nothing to every
+    // caller (getPageExcerpt/getJobPageText in sidebar.js always resolved
+    // to undefined/empty), which is why page content never actually made
+    // it into chat/summarize/quiz/JobFit context.
+    if (message.type === "GET_PAGE_EXCERPT") {
+      sendResponse(getPageExcerpt());
+      return true;
+    }
+    // JobFit needs much more of the page than the short chat-context
+    // excerpt above - a job posting's full requirements list can easily
+    // run past 2000 characters.
+    if (message.type === "GET_JOB_PAGE_TEXT") {
+      sendResponse(getPageExcerpt(20000));
+      return true;
+    }
     if (message.type === "OPEN_QUICK_ASK") {
       if (sidebarFrame) {
         focusChatInput();
