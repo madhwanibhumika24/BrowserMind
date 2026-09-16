@@ -5,7 +5,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     app_env: str = "development"
     google_api_key: str = ""
-    gemini_model: str = "gemini-3.6-flash"
+    # gemini-2.5-flash-lite was deprecated for new users (404'd with a
+    # message pointing here) - gemini-3.5-flash-lite is the current
+    # lightweight model with a similarly generous free-tier quota, vs.
+    # gemini-3.6-flash's old, much tighter 20/day limit.
+    gemini_model: str = "gemini-3.5-flash-lite"
     allowed_origins: str = "chrome-extension://*"
 
     # MySQL - stores memory, users, and login sessions. A local MySQL server
