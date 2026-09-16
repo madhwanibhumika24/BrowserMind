@@ -20,6 +20,13 @@ class Settings(BaseSettings):
     # so we know the access token we're checking was actually issued for our app.
     google_oauth_client_id: str = ""
 
+    # Email/password auth: forgot-password codes are sent from this Gmail
+    # account. smtp_app_password is a 16-character "app password" generated
+    # from the Google Account's Security settings - NOT the account's real
+    # login password (Gmail rejects the real one for SMTP).
+    smtp_email: str = ""
+    smtp_app_password: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

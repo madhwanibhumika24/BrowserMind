@@ -1,7 +1,7 @@
 """SQLAlchemy ORM models - the MySQL equivalent of what used to be
 memory.json / users.json / sessions.json.
 """
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.mysql import LONGTEXT
 from sqlalchemy.sql import func
 
@@ -9,11 +9,21 @@ from app.db.session import Base
 
 
 class UserRow(Base):
+    """One account, signed up either with an email + password or with
+    Google Sign-In (or, in principle, both - `google_id` just links a
+    Google account to this row if the person ever uses it). `id` is a
+    provider-agnostic UUID so every other table's `creator_id`/`user_id`
+    column doesn't need to care which way someone signed up.
+    """
     __tablename__ = "users"
 
-    google_id = Column(String(64), primary_key=True)
-    email = Column(String(255), nullable=False)
+    id = Column(String(36), primary_key=True)
+    email = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
+    # Null for accounts that have only ever used Google Sign-In.
+    password_hash = Column(String(255), nullable=True)
+    # Null for accounts that have only ever used email/password.
+    google_id = Column(String(64), nullable=True, unique=True)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -25,7 +35,24 @@ class LoginSessionRow(Base):
     __tablename__ = "login_sessions"
 
     token = Column(String(64), primary_key=True)
-    google_id = Column(String(64), ForeignKey("users.google_id"), nullable=False)
+    user_id = Column(String(36), ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+
+
+class PasswordResetCodeRow(Base):
+    """A short-lived 6-digit code emailed to someone who forgot their
+    password. Plain-text (not hashed) on purpose - it's single-use, expires
+    in minutes, and only ever any good paired with the exact email it was
+    sent to, so hashing it adds complexity without a meaningful security
+    gain for a project at this scale.
+    """
+    __tablename__ = "password_reset_codes"
+
+    id = Column(String(36), primary_key=True)
+    email = Column(String(255), nullable=False, index=True)
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, server_default=func.now())
 
 
@@ -46,7 +73,7 @@ class FormRow(Base):
     __tablename__ = "forms"
 
     id = Column(String(36), primary_key=True)
-    creator_id = Column(String(64), ForeignKey("users.google_id"), nullable=False)
+    creator_id = Column(String(36), ForeignKey("users.id"), nullable=False)
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=False)
     kind = Column(String(16), nullable=False, default="survey")  # "survey" or "quiz"
@@ -77,7 +104,7 @@ class DocumentRow(Base):
     __tablename__ = "documents"
 
     id = Column(String(36), primary_key=True)
-    creator_id = Column(String(64), ForeignKey("users.google_id"), nullable=False, index=True)
+    creator_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
     filename = Column(String(255), nullable=False)
     text = Column(LONGTEXT, nullable=False)
     created_at = Column(DateTime, server_default=func.now())

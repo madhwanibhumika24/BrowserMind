@@ -64,7 +64,7 @@ async def upload_document(
 
     combined_text = "\n\n".join(sections)
     return document_store.create(
-        creator_id=user.google_id, filename=_combined_filename(names), text=combined_text
+        creator_id=user.id, filename=_combined_filename(names), text=combined_text
     )
 
 
@@ -75,7 +75,7 @@ async def chat(
     if not body.message.strip():
         raise HTTPException(status_code=400, detail="Message can't be empty")
 
-    document = document_store.get_owned(document_id, user.google_id)
+    document = document_store.get_owned(document_id, user.id)
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 

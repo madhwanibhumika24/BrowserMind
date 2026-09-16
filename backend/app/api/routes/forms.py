@@ -50,7 +50,7 @@ async def generate(
         raise HTTPException(status_code=502, detail=f"Could not generate form: {exc}")
 
     return form_store.create(
-        creator_id=user.google_id,
+        creator_id=user.id,
         title=title,
         description=body.description,
         kind=kind,
@@ -85,7 +85,7 @@ async def generate_from_document(
         raise HTTPException(status_code=502, detail=f"Could not generate form: {exc}")
 
     return form_store.create(
-        creator_id=user.google_id,
+        creator_id=user.id,
         title=title,
         description=f"Generated from uploaded file: {file.filename}",
         kind=resolved_kind,
@@ -97,7 +97,7 @@ async def generate_from_document(
 async def list_my_forms(user: User = Depends(get_current_user)) -> list[FormSummary]:
     """The creator's dashboard: every form they've made, newest first, with
     a response count so they don't have to open each one to check."""
-    forms = form_store.list_by_creator(user.google_id)
+    forms = form_store.list_by_creator(user.id)
     return [
         FormSummary(
             id=f.id,
@@ -157,7 +157,7 @@ async def submit_response(form_id: str, body: FormAnswerSubmission) -> FormSubmi
 
 @router.get("/{form_id}/results", response_model=FormResultsResponse)
 async def get_results(form_id: str, user: User = Depends(get_current_user)) -> FormResultsResponse:
-    form = form_store.get_owned(form_id, user.google_id)
+    form = form_store.get_owned(form_id, user.id)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found")
 
@@ -170,7 +170,7 @@ async def get_results(form_id: str, user: User = Depends(get_current_user)) -> F
 @router.get("/{form_id}/responses.csv")
 async def export_responses_csv(form_id: str, user: User = Depends(get_current_user)) -> StreamingResponse:
     """Creator-only CSV download of every response, one row per respondent."""
-    form = form_store.get_owned(form_id, user.google_id)
+    form = form_store.get_owned(form_id, user.id)
     if not form:
         raise HTTPException(status_code=404, detail="Form not found")
 

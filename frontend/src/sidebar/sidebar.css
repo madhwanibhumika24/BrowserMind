@@ -55,6 +55,27 @@ body {
   height: 100vh;
 }
 
+/* Full-page mode: the "expand" button opens this same sidebar.html in its
+   own browser tab (see expand-btn in sidebar.js) instead of the narrow
+   injected panel. Everything inside #app is unchanged - it's still the
+   same layout designed for a sidebar's width - this just caps it at a
+   comfortable reading width and centers it in the tab instead of letting
+   every element stretch edge-to-edge across a full monitor. */
+body.full-page {
+  display: flex;
+  justify-content: center;
+  background: var(--bm-border);
+  border-radius: 0;
+}
+
+body.full-page #app {
+  max-width: 900px;
+  width: 100%;
+  border-left: 1px solid var(--bm-border);
+  border-right: 1px solid var(--bm-border);
+  box-shadow: var(--bm-shadow-card);
+}
+
 .body-row {
   position: relative;
   z-index: 1;
@@ -248,13 +269,16 @@ body.signed-out footer {
 
 .auth-card {
   text-align: center;
-  max-width: 260px;
+  max-width: 440px;
+  width: 100%;
   background: var(--bm-surface);
   border: 1px solid var(--bm-border);
   border-radius: 16px;
   padding: 32px 26px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   animation: bm-card-glow 3.5s ease-in-out infinite;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
 }
 
 @keyframes bm-card-glow {
@@ -313,16 +337,148 @@ body.signed-out footer {
   color: var(--bm-text-muted);
   font-size: 12.5px;
   line-height: 1.5;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
 }
 
-.auth-btn-row {
+/* Log In / Sign Up segmented tabs - same visual language as the JobFit
+   tab bar elsewhere in the sidebar, so the two multi-view components in
+   this app look like one consistent pattern. */
+.auth-mode-tabs {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: 9px;
+  padding: 3px;
+  margin-bottom: 18px;
+}
+
+.auth-mode-tab {
+  flex: 1;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 9px 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--bm-text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.auth-mode-tab:hover {
+  color: var(--bm-text);
+}
+
+.auth-mode-tab.active {
+  background: transparent;
+  border-color: transparent;
+  /* Glossy gradient text instead of a filled tab - the accent colors show
+     through the letters themselves, with a soft glow behind them. */
+  background-image: linear-gradient(135deg, var(--bm-accent-2), var(--bm-accent-soft, var(--bm-accent)));
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 14px rgba(var(--bm-accent-rgb), 0.45);
+}
+
+.auth-mode-tab.active:hover {
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.auth-form-hint {
+  color: var(--bm-text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 2px;
+}
+
+.auth-input {
+  width: 100%;
+  background: var(--bm-bg);
+  border: 1px solid var(--bm-border);
+  border-radius: 9px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--bm-text);
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--bm-accent);
+}
+
+.auth-input::placeholder {
+  color: var(--bm-text-muted);
+}
+
+.auth-submit-btn {
+  width: 100%;
+  background: var(--bm-accent);
+  border: 1px solid var(--bm-accent);
+  color: #fff;
+  border-radius: 9px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 2px;
+}
+
+.auth-submit-btn:hover {
+  opacity: 0.9;
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth-link-btn {
+  background: transparent;
+  border: none;
+  color: var(--bm-accent-soft, var(--bm-accent));
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 2px 0;
+  align-self: center;
+}
+
+.auth-link-btn:hover {
+  text-decoration: underline;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--bm-text-muted);
+  font-size: 11px;
+  margin: 18px 0 14px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--bm-border);
 }
 
 .auth-btn {
-  flex: 1;
+  width: 100%;
   position: relative;
   overflow: hidden;
   display: inline-flex;
@@ -337,14 +493,14 @@ body.signed-out footer {
   font-family: inherit;
 }
 
-.auth-btn-primary {
+.auth-btn-google {
   background: var(--bm-bg);
   border: 1px solid var(--bm-border);
   color: var(--bm-text);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
-.auth-btn-primary::after {
+.auth-btn-google::after {
   content: "";
   position: absolute;
   top: 0;
@@ -360,7 +516,7 @@ body.signed-out footer {
   animation: bm-shimmer 3.5s ease-in-out infinite;
 }
 
-:root[data-theme="light"] .auth-btn-primary::after {
+:root[data-theme="light"] .auth-btn-google::after {
   background: linear-gradient(
     100deg,
     transparent,
@@ -374,18 +530,8 @@ body.signed-out footer {
   60%, 100% { left: 130%; }
 }
 
-.auth-btn-primary:hover {
+.auth-btn-google:hover {
   background: var(--bm-surface-hover);
-}
-
-.auth-btn-secondary {
-  background: var(--bm-accent);
-  border: 1px solid var(--bm-accent);
-  color: #fff;
-}
-
-.auth-btn-secondary:hover {
-  opacity: 0.9;
 }
 
 .auth-btn:disabled {
@@ -402,7 +548,13 @@ body.signed-out footer {
 #auth-error {
   color: var(--bm-danger);
   font-size: 11.5px;
-  margin: 10px 0 0;
+  margin: 14px 0 0;
+}
+
+#auth-success {
+  color: #6ee7b7;
+  font-size: 11.5px;
+  margin: 14px 0 0;
 }
 
 /* Left-aligned info row + a divider + a list-item action, mirroring the
@@ -1677,6 +1829,68 @@ footer {
   border: none;
   border-top: 1px solid var(--bm-border);
   margin: 10px 0;
+}
+
+/* Inline math ("$...$" from the model) rendered by renderFormula() in
+   utils/markdown.js - a clean pill with real sup/sub/fractions instead of
+   raw "$s = c \cdot \log(1 + r)$". */
+.msg-assistant .bm-formula {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: "Cambria Math", Cambria, "Times New Roman", serif;
+  font-style: italic;
+  font-size: 13.5px;
+  background: rgba(var(--bm-accent-rgb), 0.08);
+  border: 1px solid rgba(var(--bm-accent-rgb), 0.22);
+  border-radius: 6px;
+  padding: 1px 7px;
+  margin: 0 1px;
+  color: var(--bm-text);
+  white-space: nowrap;
+}
+
+.msg-assistant .bm-formula sup,
+.msg-assistant .bm-formula sub {
+  font-style: italic;
+  font-size: 0.7em;
+}
+
+.msg-assistant .bm-formula .bm-fn {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--bm-accent-soft);
+}
+
+.msg-assistant .bm-formula .bm-frac {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  vertical-align: middle;
+  line-height: 1.05;
+  margin: 0 2px;
+  font-size: 0.85em;
+}
+
+.msg-assistant .bm-formula .bm-frac-num,
+.msg-assistant .bm-formula .bm-frac-den {
+  display: block;
+  padding: 0 2px;
+}
+
+.msg-assistant .bm-formula .bm-frac-num {
+  border-bottom: 1px solid currentColor;
+}
+
+.msg-assistant .bm-formula .bm-sqrt {
+  display: inline-flex;
+  align-items: flex-start;
+}
+
+.msg-assistant .bm-formula .bm-sqrt-bar {
+  border-top: 1px solid currentColor;
+  padding: 0 2px;
+  margin-left: 1px;
 }
 
 .thinking-dots {

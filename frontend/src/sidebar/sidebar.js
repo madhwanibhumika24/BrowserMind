@@ -6,7 +6,15 @@ import {
   deleteMemory,
   analyzeJobFit,
 } from "../utils/api.js";
-import { signInWithGoogle, signOut, getStoredAuth } from "../utils/auth.js";
+import {
+  signInWithGoogle,
+  signOut,
+  getStoredAuth,
+  signUp,
+  logIn,
+  requestPasswordReset,
+  resetPassword,
+} from "../utils/auth.js";
 import { formatReply } from "../utils/markdown.js";
 
 // sessionId and historyMessages can both get replaced once we restore a
@@ -66,6 +74,7 @@ const jobfitMissingSkillsEl = document.getElementById("jobfit-missing-skills");
 const themeToggleBtn = document.getElementById("theme-toggle-btn");
 const clearChatBtn = document.getElementById("clear-chat-btn");
 const closeBtn = document.getElementById("close-btn");
+const expandBtn = document.getElementById("expand-btn");
 const logoIcon = document.querySelector(".logo-icon");
 const homeView = document.getElementById("home-view");
 const homeSummarizeBtn = document.getElementById("home-summarize-btn");
@@ -83,7 +92,29 @@ const homeNewChatBtn = document.getElementById("home-newchat-btn");
 const homeGreetingName = document.getElementById("home-greeting-name");
 const authGate = document.getElementById("auth-gate");
 const googleLoginBtn = document.getElementById("google-login-btn");
-const googleSignupBtn = document.getElementById("google-signup-btn");
+const authModeTabs = document.querySelectorAll(".auth-mode-tab");
+const authLoginForm = document.getElementById("auth-login-form");
+const authLoginEmail = document.getElementById("auth-login-email");
+const authLoginPassword = document.getElementById("auth-login-password");
+const authLoginSubmit = document.getElementById("auth-login-submit");
+const authForgotLink = document.getElementById("auth-forgot-link");
+const authSignupForm = document.getElementById("auth-signup-form");
+const authSignupName = document.getElementById("auth-signup-name");
+const authSignupEmail = document.getElementById("auth-signup-email");
+const authSignupPassword = document.getElementById("auth-signup-password");
+const authSignupSubmit = document.getElementById("auth-signup-submit");
+const authForgotForm = document.getElementById("auth-forgot-form");
+const authForgotEmail = document.getElementById("auth-forgot-email");
+const authForgotSubmit = document.getElementById("auth-forgot-submit");
+const authResetForm = document.getElementById("auth-reset-form");
+const authResetCode = document.getElementById("auth-reset-code");
+const authResetPassword = document.getElementById("auth-reset-password");
+const authResetSubmit = document.getElementById("auth-reset-submit");
+const authBackLinks = document.querySelectorAll(".auth-back-link");
+const authDivider = document.getElementById("auth-divider");
+const authTitle = document.getElementById("auth-title");
+const authSubheading = document.getElementById("auth-subheading");
+const authSuccessEl = document.getElementById("auth-success");
 const accountBtn = document.getElementById("account-btn");
 const accountPanel = document.getElementById("account-panel");
 const accountPanelAvatar = document.getElementById("account-panel-avatar");
@@ -673,34 +704,151 @@ async function checkAuth() {
   if (auth?.token) {
     showSignedIn(auth);
   } else {
+    showAuthView("login");
     authGate.classList.remove("hidden");
     document.body.classList.add("signed-out");
   }
 }
 
-// Log In and Sign Up both go through the exact same Google Sign-In flow -
-// the backend decides whether that Google account is new (sign-up) or
-// returning (log-in) via find_or_create_user. Two buttons just match the
-// familiar convention; there's only one auth path underneath.
+// ---- Auth gate: Log In / Sign Up / Forgot Password / Reset Password ----
+// Four forms sharing one card, only one visible at a time - same
+// show-one-hide-the-rest pattern as the JobFit tabs and the main app views.
+const AUTH_FORMS = {
+  login: authLoginForm,
+  signup: authSignupForm,
+  forgot: authForgotForm,
+  reset: authResetForm,
+};
+const AUTH_COPY = {
+  login: { title: "Welcome to BrowserMind", subheading: "Log in or create an account to get started." },
+  signup: { title: "Create your account", subheading: "It only takes a moment to get started." },
+  forgot: { title: "Reset your password", subheading: "We'll email you a code to get back in." },
+  reset: { title: "Check your email", subheading: "Enter the code and choose a new password." },
+};
+
+// The reset form only asks for a code + new password (no email field) -
+// this remembers which email the code was sent to, set when the forgot
+// step succeeds.
+let authResetEmail = "";
+
+function showAuthView(name) {
+  authErrorEl.classList.add("hidden");
+  authSuccessEl.classList.add("hidden");
+
+  for (const [key, form] of Object.entries(AUTH_FORMS)) {
+    form.classList.toggle("hidden", key !== name);
+  }
+  authModeTabs.forEach((tab) => tab.classList.toggle("active", tab.dataset.mode === name));
+
+  // Google Sign-In has no place in the forgot/reset flow - a Google
+  // account doesn't have a BrowserMind password to reset.
+  const showGoogleOption = name === "login" || name === "signup";
+  authDivider.classList.toggle("hidden", !showGoogleOption);
+  googleLoginBtn.classList.toggle("hidden", !showGoogleOption);
+
+  const copy = AUTH_COPY[name] || AUTH_COPY.login;
+  authTitle.textContent = copy.title;
+  authSubheading.textContent = copy.subheading;
+}
+
+authModeTabs.forEach((tab) => {
+  tab.addEventListener("click", () => showAuthView(tab.dataset.mode));
+});
+
+authForgotLink.addEventListener("click", () => showAuthView("forgot"));
+authBackLinks.forEach((link) => link.addEventListener("click", () => showAuthView("login")));
+
+function showAuthError(err) {
+  authErrorEl.textContent = err.message || "Something went wrong - try again.";
+  authErrorEl.classList.remove("hidden");
+}
+
+authLoginForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authErrorEl.classList.add("hidden");
+  authLoginSubmit.disabled = true;
+  try {
+    const auth = await logIn({ email: authLoginEmail.value.trim(), password: authLoginPassword.value });
+    showSignedIn(auth);
+  } catch (err) {
+    showAuthError(err);
+  } finally {
+    authLoginSubmit.disabled = false;
+  }
+});
+
+authSignupForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authErrorEl.classList.add("hidden");
+  authSignupSubmit.disabled = true;
+  try {
+    const auth = await signUp({
+      name: authSignupName.value.trim(),
+      email: authSignupEmail.value.trim(),
+      password: authSignupPassword.value,
+    });
+    showSignedIn(auth);
+  } catch (err) {
+    showAuthError(err);
+  } finally {
+    authSignupSubmit.disabled = false;
+  }
+});
+
+authForgotForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authErrorEl.classList.add("hidden");
+  authForgotSubmit.disabled = true;
+  try {
+    const email = authForgotEmail.value.trim();
+    await requestPasswordReset(email);
+    authResetEmail = email;
+    showAuthView("reset");
+    authSuccessEl.textContent = `Code sent to ${email} - check your inbox.`;
+    authSuccessEl.classList.remove("hidden");
+  } catch (err) {
+    showAuthError(err);
+  } finally {
+    authForgotSubmit.disabled = false;
+  }
+});
+
+authResetForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  authErrorEl.classList.add("hidden");
+  authResetSubmit.disabled = true;
+  try {
+    await resetPassword({
+      email: authResetEmail,
+      code: authResetCode.value.trim(),
+      newPassword: authResetPassword.value,
+    });
+    showAuthView("login");
+    authLoginEmail.value = authResetEmail;
+    authSuccessEl.textContent = "Password updated - log in with your new password.";
+    authSuccessEl.classList.remove("hidden");
+  } catch (err) {
+    showAuthError(err);
+  } finally {
+    authResetSubmit.disabled = false;
+  }
+});
+
 async function handleGoogleAuth() {
   authErrorEl.classList.add("hidden");
   googleLoginBtn.disabled = true;
-  googleSignupBtn.disabled = true;
   try {
     const auth = await signInWithGoogle();
     showSignedIn(auth);
   } catch (err) {
     console.error("BrowserMind sign-in error:", err);
-    authErrorEl.textContent = `Sign-in failed: ${err.message}`;
-    authErrorEl.classList.remove("hidden");
+    showAuthError(new Error(`Sign-in failed: ${err.message}`));
   } finally {
     googleLoginBtn.disabled = false;
-    googleSignupBtn.disabled = false;
   }
 }
 
 googleLoginBtn.addEventListener("click", handleGoogleAuth);
-googleSignupBtn.addEventListener("click", handleGoogleAuth);
 
 function toggleAccountPanel() {
   accountPanel.classList.toggle("hidden");
@@ -721,6 +869,7 @@ signOutBtn.addEventListener("click", async () => {
     await signOut();
   } finally {
     accountPanel.classList.add("hidden");
+    showAuthView("login");
     authGate.classList.remove("hidden");
     document.body.classList.add("signed-out");
     signOutBtn.disabled = false;
@@ -971,6 +1120,25 @@ logoIcon.addEventListener("click", goHome);
 closeBtn.addEventListener("click", () => {
   window.parent.postMessage({ type: "BROWSERMIND_CLOSE" }, "*");
 });
+
+// "Expand" opens this exact same sidebar.html as its own browser tab -
+// same header, same views, same everything, just not squeezed into the
+// narrow injected panel. window.self !== window.top is true only when
+// we're the injected iframe (has a parent page); a tab opened this way
+// has no parent, so that check also doubles as "are we already full-page
+// mode" - no separate flag needed. Runs once at load, not per-view, so
+// every page/feature in the app (home, chat, JobFit, memory, etc.) gets
+// it for free since they all share this one header.
+const isEmbeddedInPage = window.self !== window.top;
+if (isEmbeddedInPage) {
+  expandBtn.addEventListener("click", () => {
+    chrome.tabs.create({ url: chrome.runtime.getURL("src/sidebar/sidebar.html") });
+  });
+} else {
+  // Already a full page - expanding further would do nothing useful.
+  expandBtn.classList.add("hidden");
+  document.body.classList.add("full-page");
+}
 homeSummarizeBtn.addEventListener("click", summarizePage);
 homeTabsBtn.addEventListener("click", handleSummarize);
 homeQuizBtn.addEventListener("click", handleQuiz);

@@ -125,7 +125,7 @@ export async function listMyForms() {
 // surfacing that instead of just the status code is the difference between
 // the user seeing "Document not found" / "rate-limited, try again" and
 // always seeing the same generic message no matter what actually failed.
-async function errorMessage(res, fallback) {
+export async function errorMessage(res, fallback) {
   try {
     const body = await res.json();
     if (body?.detail) return body.detail;

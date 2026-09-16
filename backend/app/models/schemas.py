@@ -62,6 +62,31 @@ class GoogleAuthRequest(BaseModel):
     access_token: str
 
 
+class SignupRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    code: str
+    new_password: str
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
 class AuthResponse(BaseModel):
     token: str
     email: str
@@ -69,7 +94,7 @@ class AuthResponse(BaseModel):
 
 
 class User(BaseModel):
-    google_id: str
+    id: str
     email: str
     name: str
     created_at: str
@@ -190,3 +215,40 @@ MindmapNode.model_rebuild()  # resolves the self-reference above
 
 class MindmapResponse(BaseModel):
     root: MindmapNode
+
+
+class CompanyInfo(BaseModel):
+    """What JobFit could tell about the hiring company - built from whatever
+    the page itself says plus the model's own general knowledge. Every
+    field is optional and left blank rather than guessed when unknown, so
+    an unfamiliar startup just shows less, not made-up facts."""
+    name: str = ""
+    overview: str = ""  # what the company actually does, 1-2 sentences
+    industry: str = ""
+    notable_facts: str = ""  # history / focus areas / recent news, from general knowledge only
+
+
+class RoleInfo(BaseModel):
+    """The job itself, separate from the skills match below - title, what
+    kind of role it is, and the headline responsibilities."""
+    title: str = ""
+    employment_type: str = ""  # e.g. Internship, Full-time, Contract
+    location: str = ""  # e.g. "Pune, India (On-site)" or "Remote"
+    responsibilities: list[str] = []
+
+
+class JobFitResponse(BaseModel):
+    """Result of analyzing a job posting: what the company and role are,
+    and how a resume's skills compare against what's required. Stateless
+    like the PDF tools - nothing here is stored server-side. resume_text is
+    echoed back so the frontend can cache it (in the browser only) and skip
+    re-uploading/re-parsing the resume on the next job page.
+    """
+    fit_score: int  # 0-100, matched_skills / required_skills
+    required_skills: list[str]
+    matched_skills: list[str]
+    missing_skills: list[str]
+    summary: str
+    resume_text: str = ""
+    company: CompanyInfo = CompanyInfo()
+    role: RoleInfo = RoleInfo()

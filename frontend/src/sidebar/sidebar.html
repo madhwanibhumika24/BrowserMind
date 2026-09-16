@@ -13,6 +13,9 @@
       <img class="logo-icon" src="../../public/icons/icon48.png" alt="BrowserMind" title="Home" />
       <div class="header-actions">
         <button id="account-btn" class="avatar-btn" title="Account"></button>
+        <button id="expand-btn" title="Open in full page">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+        </button>
         <button id="theme-toggle-btn" title="Toggle theme"></button>
         <button id="close-btn" title="Close">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -24,17 +27,52 @@
         <div class="auth-icon-wrap">
           <img class="auth-icon" src="../../public/icons/icon128.png" alt="" />
         </div>
-        <h2>Welcome to BrowserMind</h2>
-        <p>Log in if you've used BrowserMind before, or sign up to get started — both use Google Sign-In.</p>
-        <div class="auth-btn-row">
-          <button id="google-login-btn" class="auth-btn auth-btn-primary">
-            <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.6-.2-2.36H12v4.47h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.87c2.27-2.09 3.58-5.17 3.58-8.74z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.9l-3.87-3a7.4 7.4 0 0 1-11-3.9H1.1v3.09A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.6V6.51H1.1a12 12 0 0 0 0 10.78z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.35.6 4.6 1.8l3.44-3.44A11.6 11.6 0 0 0 12 0 12 12 0 0 0 1.1 6.51l3.97 3.09A7.16 7.16 0 0 1 12 4.75z"/></svg>
-            Log In
-          </button>
-          <button id="google-signup-btn" class="auth-btn auth-btn-secondary">Sign Up</button>
+        <h2 id="auth-title">Welcome to BrowserMind</h2>
+        <p id="auth-subheading">Log in or create an account to get started.</p>
+
+        <div class="auth-mode-tabs">
+          <button type="button" class="auth-mode-tab active" data-mode="login">Log In</button>
+          <button type="button" class="auth-mode-tab" data-mode="signup">Sign Up</button>
         </div>
-        <p class="auth-subtext">Both buttons open the same Google sign-in — we'll create your account automatically the first time.</p>
+
+        <form id="auth-login-form" class="auth-form">
+          <input id="auth-login-email" class="auth-input" type="email" placeholder="Email" autocomplete="email" required />
+          <input id="auth-login-password" class="auth-input" type="password" placeholder="Password" autocomplete="current-password" required />
+          <button type="submit" id="auth-login-submit" class="auth-submit-btn">Log In</button>
+          <button type="button" id="auth-forgot-link" class="auth-link-btn">Forgot password?</button>
+        </form>
+
+        <form id="auth-signup-form" class="auth-form hidden">
+          <input id="auth-signup-name" class="auth-input" type="text" placeholder="Full name" autocomplete="name" required />
+          <input id="auth-signup-email" class="auth-input" type="email" placeholder="Email" autocomplete="email" required />
+          <input id="auth-signup-password" class="auth-input" type="password" placeholder="Password (min. 8 characters)" autocomplete="new-password" required />
+          <button type="submit" id="auth-signup-submit" class="auth-submit-btn">Sign Up</button>
+        </form>
+
+        <form id="auth-forgot-form" class="auth-form hidden">
+          <p class="auth-form-hint">Enter your account email and we'll send a 6-digit reset code.</p>
+          <input id="auth-forgot-email" class="auth-input" type="email" placeholder="Email" autocomplete="email" required />
+          <button type="submit" id="auth-forgot-submit" class="auth-submit-btn">Send Reset Code</button>
+          <button type="button" class="auth-link-btn auth-back-link" data-back="login">Back to Log In</button>
+        </form>
+
+        <form id="auth-reset-form" class="auth-form hidden">
+          <p class="auth-form-hint">Enter the code we emailed you and choose a new password.</p>
+          <input id="auth-reset-code" class="auth-input" type="text" inputmode="numeric" maxlength="6" placeholder="6-digit code" required />
+          <input id="auth-reset-password" class="auth-input" type="password" placeholder="New password (min. 8 characters)" autocomplete="new-password" required />
+          <button type="submit" id="auth-reset-submit" class="auth-submit-btn">Reset Password</button>
+          <button type="button" class="auth-link-btn auth-back-link" data-back="login">Back to Log In</button>
+        </form>
+
+        <div id="auth-divider" class="auth-divider"><span>or</span></div>
+
+        <button type="button" id="google-login-btn" class="auth-btn auth-btn-google">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M23.52 12.27c0-.82-.07-1.6-.2-2.36H12v4.47h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.87c2.27-2.09 3.58-5.17 3.58-8.74z"/><path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.9l-3.87-3a7.4 7.4 0 0 1-11-3.9H1.1v3.09A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.6V6.51H1.1a12 12 0 0 0 0 10.78z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.35.6 4.6 1.8l3.44-3.44A11.6 11.6 0 0 0 12 0 12 12 0 0 0 1.1 6.51l3.97 3.09A7.16 7.16 0 0 1 12 4.75z"/></svg>
+          Continue with Google
+        </button>
+
         <p id="auth-error" class="hidden"></p>
+        <p id="auth-success" class="hidden"></p>
       </div>
     </div>
     <div id="account-panel" class="hidden">
